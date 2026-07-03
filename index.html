@@ -25,7 +25,6 @@
     </script>
     
     <style>
-        /* ===== استایل‌های کامل ===== */
         :root {
             --bg: #0B1026;
             --bg-light: #111638;
@@ -404,7 +403,7 @@
 
     <script>
     // ============================================================
-    //   تنظیمات Supabase - این دو خط را با اطلاعات خودت پر کن
+    //   تنظیمات Supabase
     // ============================================================
     const SUPABASE_URL = 'https://umyxarhminlnkmlnyuyl.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_pl4pUJrlRdkoAGjQPLobwg_RPTNLdCT';
@@ -957,7 +956,9 @@
         }
     });
 
-    // ===== پایان آزمون با ذخیره در Supabase =====
+    // ============================================================
+    //   پایان آزمون با ذخیره در Supabase
+    // ============================================================
     async function finishQuiz() {
         const elapsed = Math.round((Date.now() - state.startTime) / 1000);
         const minutes = Math.floor(elapsed / 60);
@@ -975,7 +976,6 @@
             maxStreak: state.maxStreak
         };
 
-        // ذخیره در Supabase
         showToast('در حال ذخیره نتیجه...', 'info', 2000);
         await saveResultToSupabase(result);
 
@@ -1017,11 +1017,13 @@
         }
     }
 
+    // ============================================================
+    //   توابع ذخیره‌سازی محلی (LocalStorage) - به عنوان پشتیبان
+    // ============================================================
     function saveToLocalStorage(result) {
         const data = getAllData();
         data.push(result);
         localStorage.setItem('solarQuizData', JSON.stringify(data));
-        showToast('نتیجه به صورت محلی ذخیره شد.', 'info', 2000);
     }
 
     function getAllData() {
@@ -1031,6 +1033,28 @@
 
     function getStudentResults(name) {
         return getAllData().filter(r => r.name === name);
+    }
+
+    // ============================================================
+    //   دریافت نتایج از Supabase (برای پنل معلم)
+    // ============================================================
+    async function getAllResultsFromSupabase() {
+        try {
+            const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            const { data, error } = await supabase
+                .from('quiz_results')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                console.error('❌ Supabase Fetch Error:', error);
+                return getAllData();
+            }
+            return data;
+        } catch (e) {
+            console.error('❌ Error:', e);
+            return getAllData();
+        }
     }
 
     // ============================================================
@@ -1309,7 +1333,7 @@
     }
 
     // ============================================================
-    //   پنل معلم
+    //   پنل معلم - اصلاح شده (از Supabase می‌خواند)
     // ============================================================
     const TEACHER_PIN = '1234';
     document.getElementById('teacherPanelBtn').addEventListener('click', function() {
@@ -1324,32 +1348,37 @@
         if (e.key === 'Enter') teacherLogin();
     });
 
-    function teacherLogin() {
+    async function teacherLogin() {
         const pin = document.getElementById('teacherPin').value;
         if (pin === TEACHER_PIN) {
             document.getElementById('teacherLogin').style.display = 'none';
             document.getElementById('teacherContent').style.display = 'block';
-            renderTeacherTable();
+            await renderTeacherTable();
         } else {
             document.getElementById('teacherError').style.display = 'block';
             document.getElementById('teacherPin').value = '';
         }
     }
 
-    function renderTeacherTable() {
+    async function renderTeacherTable() {
         const searchInput = document.getElementById('teacherSearch');
         const search = (searchInput?.value || '').trim();
-        const data = getAllData();
-        const filtered = search ? data.filter(r => r.name && r.name.includes(search)) : data;
+        
+        let data = await getAllResultsFromSupabase();
+        
+        if (search) {
+            data = data.filter(r => r.name && r.name.includes(search));
+        }
+        
         const container = document.getElementById('teacherTableContainer');
 
-        if (filtered.length === 0) {
+        if (!data || data.length === 0) {
             container.innerHTML = `<div class="text-center py-8"><i class="fa-solid fa-inbox text-3xl mb-3" style="color:var(--muted);"></i><p style="color:var(--muted);">داده‌ای یافت نشد</p></div>`;
             return;
         }
 
         const grouped = {};
-        filtered.forEach(r => {
+        data.forEach(r => {
             if (!grouped[r.name]) grouped[r.name] = [];
             grouped[r.name].push(r);
         });
@@ -1366,13 +1395,13 @@
                 <td class="font-bold">${name}</td>
                 <td>${toPersianNum(attempts.length)}</td>
                 <td style="color:var(--gold);font-weight:700;">${toPersianNum(best)}</td>
-                <td style="font-size:0.78rem;">${formatDate(last.timestamp)}</td>
+                <td style="font-size:0.78rem;">${formatDate(last.timestamp || Date.now())}</td>
                 <td>${toPersianNum(avg)}</td>
             </tr>`;
         });
 
         html += '</tbody></table>';
-        html += `<div class="text-xs mt-3 text-center" style="color:var(--muted);">مجموع ${toPersianNum(filtered.length)} تلاش از ${toPersianNum(Object.keys(grouped).length)} دانش‌آموز</div>`;
+        html += `<div class="text-xs mt-3 text-center" style="color:var(--muted);">مجموع ${toPersianNum(data.length)} تلاش از ${toPersianNum(Object.keys(grouped).length)} دانش‌آموز</div>`;
         container.innerHTML = html;
     }
 
@@ -1396,10 +1425,20 @@
         document.body.appendChild(modal);
     }
 
-    function confirmClear() {
+    async function confirmClear() {
+        try {
+            const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            const { error } = await supabase.from('quiz_results').delete().neq('id', 0);
+            if (error) {
+                console.error('Supabase delete error:', error);
+            }
+        } catch(e) {
+            console.error('Error:', e);
+        }
+        
         localStorage.removeItem('solarQuizData');
         document.getElementById('confirmModal').remove();
-        renderTeacherTable();
+        await renderTeacherTable();
         showToast('تمام داده‌ها پاک شد.', 'info');
     }
 
@@ -1407,6 +1446,7 @@
 
     console.log('✅ برنامه با موفقیت بارگذاری شد!');
     console.log('🔑 کد پنل معلم: 1234');
+    console.log('📊 نتایج در Supabase ذخیره می‌شوند');
     </script>
 </body>
 </html>
