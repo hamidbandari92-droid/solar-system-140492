@@ -1,0 +1,1478 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>سفر به منظومه شمسی</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Lalezar&family=Vazirmatn:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
+    <!-- ===== کتابخانه Supabase ===== -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        display: ['Lalezar', 'cursive'],
+                        body: ['Vazirmatn', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        :root {
+            --bg: #0B1026;
+            --bg-light: #111638;
+            --card: rgba(255,255,255,0.07);
+            --card-border: rgba(255,255,255,0.12);
+            --gold: #FBBF24;
+            --gold-dark: #D97706;
+            --teal: #06B6D4;
+            --correct: #10B981;
+            --wrong: #F97316;
+            --text: #F1F5F9;
+            --muted: #94A3B8;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Vazirmatn', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+            direction: rtl;
+        }
+        #starCanvas {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 0; pointer-events: none;
+        }
+        #confettiCanvas {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 100; pointer-events: none;
+        }
+        .screen {
+            display: none; position: relative; z-index: 10;
+            min-height: 100vh; padding: 1rem;
+            animation: fadeIn 0.5s ease;
+        }
+        .screen.active { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideIn { from { opacity: 0; transform: translateX(40px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes popIn { 0% { transform: scale(0); } 60% { transform: scale(1.15); } 100% { transform: scale(1); } }
+        @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
+        @keyframes pulse-glow { 0%,100% { box-shadow: 0 0 20px rgba(251,191,36,0.3); } 50% { box-shadow: 0 0 40px rgba(251,191,36,0.6); } }
+        @keyframes trophy-bounce { 0%,100% { transform: translateY(0) rotate(0deg); } 25% { transform: translateY(-20px) rotate(-5deg); } 75% { transform: translateY(-10px) rotate(5deg); } }
+        @keyframes shimmer { 0% { background-position: -200% center; } 100% { background-position: 200% center; } }
+        @keyframes spin-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes shake { 0%,100% { transform: translateX(0); } 20% { transform: translateX(-8px); } 40% { transform: translateX(8px); } 60% { transform: translateX(-5px); } 80% { transform: translateX(5px); } }
+
+        .card-glass {
+            background: var(--card);
+            border: 1px solid var(--card-border);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-radius: 1.25rem;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+            color: #1a1a2e; font-family: 'Lalezar', cursive; font-size: 1.3rem;
+            padding: 0.85rem 2.5rem; border-radius: 1rem; border: none;
+            cursor: pointer; transition: all 0.3s ease; position: relative;
+            overflow: hidden;
+        }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(251,191,36,0.4); }
+        .btn-primary:active { transform: scale(0.97); }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+
+        .btn-secondary {
+            background: rgba(6,182,212,0.15); border: 1px solid rgba(6,182,212,0.4);
+            color: var(--teal); font-family: 'Vazirmatn', sans-serif; font-weight: 700;
+            padding: 0.7rem 1.8rem; border-radius: 0.85rem; cursor: pointer;
+            transition: all 0.3s ease; font-size: 0.95rem;
+        }
+        .btn-secondary:hover { background: rgba(6,182,212,0.25); transform: translateY(-1px); }
+
+        .input-field {
+            background: rgba(255,255,255,0.08); border: 2px solid rgba(255,255,255,0.15);
+            border-radius: 1rem; padding: 0.9rem 1.5rem; color: var(--text);
+            font-family: 'Vazirmatn', sans-serif; font-size: 1.1rem; width: 100%;
+            text-align: center; transition: all 0.3s ease; outline: none;
+        }
+        .input-field:focus { border-color: var(--gold); box-shadow: 0 0 20px rgba(251,191,36,0.2); }
+        .input-field::placeholder { color: var(--muted); }
+
+        .option-btn {
+            background: rgba(255,255,255,0.06); border: 2px solid rgba(255,255,255,0.12);
+            border-radius: 1rem; padding: 1rem 1.5rem; color: var(--text);
+            font-family: 'Vazirmatn', sans-serif; font-size: 1.05rem; font-weight: 500;
+            cursor: pointer; transition: all 0.3s ease; width: 100%; text-align: right;
+            display: flex; align-items: center; gap: 0.75rem;
+        }
+        .option-btn:hover:not(.disabled) {
+            border-color: var(--teal); background: rgba(6,182,212,0.1);
+            transform: translateX(-4px);
+        }
+        .option-btn .option-letter {
+            width: 36px; height: 36px; border-radius: 50%;
+            background: rgba(255,255,255,0.1); display: flex;
+            align-items: center; justify-content: center; font-weight: 700;
+            font-size: 0.9rem; flex-shrink: 0; transition: all 0.3s ease;
+        }
+        .option-btn.correct {
+            border-color: var(--correct); background: rgba(16,185,129,0.15);
+            animation: popIn 0.4s ease;
+        }
+        .option-btn.correct .option-letter { background: var(--correct); color: #fff; }
+        .option-btn.wrong {
+            border-color: var(--wrong); background: rgba(249,115,22,0.15);
+            animation: shake 0.4s ease;
+        }
+        .option-btn.wrong .option-letter { background: var(--wrong); color: #fff; }
+        .option-btn.disabled { pointer-events: none; opacity: 0.6; }
+        .option-btn.correct.disabled, .option-btn.wrong.disabled { opacity: 1; }
+
+        .progress-track {
+            width: 100%; height: 10px; background: rgba(255,255,255,0.08);
+            border-radius: 99px; overflow: hidden; position: relative;
+        }
+        .progress-fill {
+            height: 100%; background: linear-gradient(90deg, var(--teal), var(--gold));
+            border-radius: 99px; transition: width 0.5s ease; position: relative;
+        }
+        .progress-fill::after {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            background-size: 200% 100%; animation: shimmer 2s infinite;
+        }
+
+        .rocket-track {
+            display: flex; align-items: center; justify-content: space-between;
+            width: 100%; max-width: 500px; padding: 0 0.5rem; position: relative;
+        }
+        .rocket-track::before {
+            content: ''; position: absolute; top: 50%; left: 10%; right: 10%;
+            height: 3px; background: rgba(255,255,255,0.1); transform: translateY(-50%);
+        }
+        .track-dot {
+            width: 14px; height: 14px; border-radius: 50%;
+            background: rgba(255,255,255,0.15); border: 2px solid rgba(255,255,255,0.2);
+            position: relative; z-index: 2; transition: all 0.5s ease;
+        }
+        .track-dot.done-correct { background: var(--correct); border-color: var(--correct); box-shadow: 0 0 10px rgba(16,185,129,0.5); }
+        .track-dot.done-wrong { background: var(--wrong); border-color: var(--wrong); box-shadow: 0 0 10px rgba(249,115,22,0.5); }
+        .track-dot.current { background: var(--gold); border-color: var(--gold); box-shadow: 0 0 15px rgba(251,191,36,0.6); transform: scale(1.3); }
+        .rocket-icon {
+            position: absolute; top: -28px; transition: all 0.6s ease;
+            font-size: 1.3rem; color: var(--gold); filter: drop-shadow(0 0 8px rgba(251,191,36,0.5));
+        }
+
+        .trophy-container { animation: trophy-bounce 2s ease infinite; }
+        .trophy-glow {
+            width: 160px; height: 160px; border-radius: 50%;
+            background: radial-gradient(circle, rgba(251,191,36,0.3), transparent 70%);
+            display: flex; align-items: center; justify-content: center;
+            animation: pulse-glow 2s ease infinite;
+        }
+
+        .report-table { width: 100%; border-collapse: separate; border-spacing: 0; }
+        .report-table th {
+            background: rgba(251,191,36,0.15); color: var(--gold); padding: 0.75rem 1rem;
+            font-weight: 700; font-size: 0.9rem; border-bottom: 2px solid rgba(251,191,36,0.3);
+        }
+        .report-table th:first-child { border-radius: 0 0.75rem 0 0; }
+        .report-table th:last-child { border-radius: 0.75rem 0 0 0; }
+        .report-table td {
+            padding: 0.7rem 1rem; border-bottom: 1px solid rgba(255,255,255,0.06);
+            font-size: 0.9rem; text-align: center;
+        }
+        .report-table tr.best-row td { background: rgba(16,185,129,0.1); color: var(--correct); font-weight: 700; }
+
+        .teacher-table { width: 100%; border-collapse: separate; border-spacing: 0; }
+        .teacher-table th {
+            background: rgba(6,182,212,0.15); color: var(--teal); padding: 0.6rem 0.8rem;
+            font-weight: 700; font-size: 0.8rem; border-bottom: 2px solid rgba(6,182,212,0.3);
+        }
+        .teacher-table td {
+            padding: 0.6rem 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.06);
+            font-size: 0.82rem; text-align: center;
+        }
+
+        .star-badge {
+            display: inline-flex; align-items: center; gap: 0.3rem;
+            background: rgba(251,191,36,0.15); border: 1px solid rgba(251,191,36,0.3);
+            border-radius: 99px; padding: 0.3rem 0.8rem; font-size: 0.85rem;
+            color: var(--gold); font-weight: 700;
+        }
+        .streak-fire {
+            display: inline-flex; align-items: center; gap: 0.3rem;
+            color: #EF4444; font-weight: 700; font-size: 0.9rem;
+            animation: float 1.5s ease infinite;
+        }
+
+        .toast {
+            position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%) translateY(100px);
+            padding: 0.8rem 1.5rem; border-radius: 1rem; font-weight: 500;
+            z-index: 200; transition: transform 0.4s ease; font-size: 0.95rem;
+        }
+        .toast.show { transform: translateX(-50%) translateY(0); }
+        .toast.success { background: rgba(16,185,129,0.9); color: #fff; }
+        .toast.error { background: rgba(249,115,22,0.9); color: #fff; }
+        .toast.info { background: rgba(6,182,212,0.9); color: #fff; }
+
+        #pdfContent {
+            position: fixed; top: -9999px; left: -9999px;
+            width: 794px; background: #fff; color: #1a1a2e;
+            font-family: 'Vazirmatn', sans-serif; padding: 40px;
+            direction: rtl;
+        }
+        #pdfContent h2 { color: #D97706; font-family: 'Lalezar', cursive; font-size: 28px; text-align: center; margin-bottom: 5px; }
+        #pdfContent .pdf-subtitle { text-align: center; color: #64748B; font-size: 14px; margin-bottom: 25px; }
+        #pdfContent .pdf-info { display: flex; justify-content: space-between; margin-bottom: 20px; padding: 12px 16px; background: #FEF3C7; border-radius: 10px; }
+        #pdfContent .pdf-info span { font-size: 14px; color: #92400E; font-weight: 500; }
+        #pdfContent table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        #pdfContent th { background: #FEF3C7; color: #92400E; padding: 10px; font-size: 13px; border: 1px solid #FDE68A; font-weight: 700; }
+        #pdfContent td { padding: 10px; border: 1px solid #E5E7EB; font-size: 13px; text-align: center; color: #334155; }
+        #pdfContent tr.best-row td { background: #D1FAE5; color: #065F46; font-weight: 700; }
+        #pdfContent .pdf-footer { text-align: center; color: #94A3B8; font-size: 12px; border-top: 1px solid #E5E7EB; padding-top: 15px; margin-top: 10px; }
+        #pdfContent .pdf-best { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 15px; padding: 10px; background: #D1FAE5; border-radius: 10px; color: #065F46; font-weight: 700; font-size: 15px; }
+
+        .answer-review { display: flex; align-items: flex-start; gap: 0.6rem; padding: 0.6rem 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .answer-review i { margin-top: 3px; font-size: 0.85rem; }
+        .answer-review .review-text { font-size: 0.88rem; line-height: 1.6; }
+
+        @media (max-width: 640px) {
+            .btn-primary { font-size: 1.1rem; padding: 0.75rem 2rem; }
+            .option-btn { padding: 0.85rem 1.2rem; font-size: 0.95rem; }
+            .option-btn .option-letter { width: 30px; height: 30px; font-size: 0.8rem; }
+            .rocket-track { max-width: 320px; }
+            .track-dot { width: 10px; height: 10px; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+        }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 99px; }
+        
+        /* بارگذاری */
+        .loader {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: var(--gold);
+            animation: spin-slow 0.8s linear infinite;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="starCanvas"></canvas>
+    <canvas id="confettiCanvas"></canvas>
+
+    <!-- ===== صفحه نخست ===== -->
+    <div id="homeScreen" class="screen active">
+        <div class="card-glass p-8 sm:p-12 w-full max-w-md text-center" style="animation: slideIn 0.6s ease">
+            <div class="relative mx-auto mb-6" style="width:120px;height:120px;">
+                <div style="width:100px;height:100px;border-radius:50%;background:linear-gradient(135deg,#06B6D4,#0891B2);position:absolute;top:10px;left:10px;box-shadow:0 0 40px rgba(6,182,212,0.4),inset -15px -10px 30px rgba(0,0,0,0.3);"></div>
+                <div style="width:130px;height:18px;border-radius:50%;border:3px solid rgba(6,182,212,0.4);position:absolute;top:52px;left:-5px;transform:rotate(-15deg);animation:spin-slow 20s linear infinite;"></div>
+                <div style="width:8px;height:8px;border-radius:50%;background:var(--gold);position:absolute;top:25px;right:15px;box-shadow:0 0 10px var(--gold);animation:float 3s ease infinite;"></div>
+            </div>
+            <h1 class="font-display text-3xl sm:text-4xl mb-3" style="color:var(--gold);text-shadow:0 0 30px rgba(251,191,36,0.3);">سفر به منظومه شمسی</h1>
+            <p class="text-sm sm:text-base mb-8" style="color:var(--muted);line-height:1.8;">آماده‌ای درباره فضا چیزهای جدید یاد بگیری؟<br>۱۰ سوال جذاب منتظر توئه!</p>
+            <div class="mb-6">
+                <input type="text" id="studentNameInput" class="input-field" placeholder="نام و نام خانوادگی تو چیه؟" maxlength="40" aria-label="نام دانش‌آموز">
+            </div>
+            <button id="startBtn" class="btn-primary w-full mb-4" disabled>
+                <i class="fa-solid fa-rocket ml-2"></i>شروع سفر!
+            </button>
+            <div class="flex gap-3 justify-center mt-4">
+                <button id="viewReportBtn" class="btn-secondary text-sm" style="display:none;">
+                    <i class="fa-solid fa-file-lines ml-1"></i>کارنامه من
+                </button>
+            </div>
+            <button id="teacherPanelBtn" class="mt-6 text-xs cursor-pointer bg-transparent border-none" style="color:rgba(255,255,255,0.25);" aria-label="پنل معلم">
+                <i class="fa-solid fa-lock ml-1"></i>پنل معلم
+            </button>
+            <p class="mt-6 text-xs" style="color:rgba(255,255,255,0.2);">طراح: آموزگار دربکی</p>
+        </div>
+    </div>
+
+    <!-- ===== صفحه آزمون ===== -->
+    <div id="quizScreen" class="screen">
+        <div class="w-full max-w-2xl">
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-4 px-1">
+                <div class="flex items-center gap-3">
+                    <span id="quizStudentName" class="text-sm font-bold" style="color:var(--teal);"></span>
+                    <div class="streak-fire" id="streakBadge" style="display:none;">
+                        <i class="fa-solid fa-fire"></i>
+                        <span id="streakCount">0</span>
+                    </div>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div class="star-badge"><i class="fa-solid fa-star"></i><span id="scoreDisplay">0</span></div>
+                    <span class="text-xs" style="color:var(--muted);" id="questionCounter">۱ از ۱۰</span>
+                </div>
+            </div>
+            <div class="progress-track mb-6">
+                <div class="progress-fill" id="progressBar" style="width:0%"></div>
+            </div>
+            <div class="card-glass p-6 sm:p-8 mb-6" id="questionCard" style="animation: slideIn 0.5s ease">
+                <div class="flex items-center gap-2 mb-4">
+                    <span class="text-xs px-3 py-1 rounded-full font-bold" id="categoryBadge" style="background:rgba(6,182,212,0.15);color:var(--teal);"></span>
+                </div>
+                <p class="text-base sm:text-lg font-bold mb-6 leading-relaxed" id="questionText"></p>
+                <div class="flex flex-col gap-3" id="optionsContainer"></div>
+                <div id="feedbackArea" class="mt-5" style="display:none;">
+                    <div class="p-4 rounded-xl text-sm leading-relaxed" id="feedbackBox"></div>
+                    <button id="nextBtn" class="btn-primary mt-4 w-full text-base">
+                        <span id="nextBtnText">سوال بعدی</span> <i class="fa-solid fa-arrow-left mr-2"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="flex justify-center mb-4">
+                <div class="rocket-track" id="rocketTrack"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== صفحه نتایج ===== -->
+    <div id="resultsScreen" class="screen">
+        <div class="card-glass p-8 sm:p-10 w-full max-w-md text-center" id="resultsCard"></div>
+    </div>
+
+    <!-- ===== صفحه کارنامه ===== -->
+    <div id="reportScreen" class="screen">
+        <div class="w-full max-w-lg">
+            <div class="flex items-center justify-between mb-6 px-1">
+                <h2 class="font-display text-2xl" style="color:var(--gold);">کارنامه من</h2>
+                <button class="btn-secondary text-sm" onclick="showScreen('homeScreen')">
+                    <i class="fa-solid fa-arrow-right ml-1"></i>بازگشت
+                </button>
+            </div>
+            <div class="card-glass p-5 sm:p-6" id="reportContent"></div>
+            <div class="flex flex-wrap gap-3 justify-center mt-5">
+                <button class="btn-primary text-base" onclick="downloadPDF()">
+                    <i class="fa-solid fa-download ml-2"></i>دانلود PDF
+                </button>
+                <button class="btn-secondary" onclick="window.print()">
+                    <i class="fa-solid fa-print ml-1"></i>چاپ
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== پنل معلم ===== -->
+    <div id="teacherScreen" class="screen">
+        <div class="w-full max-w-3xl">
+            <div class="flex items-center justify-between mb-6 px-1">
+                <h2 class="font-display text-2xl" style="color:var(--teal);">پنل معلم</h2>
+                <button class="btn-secondary text-sm" onclick="showScreen('homeScreen')">
+                    <i class="fa-solid fa-arrow-right ml-1"></i>بازگشت
+                </button>
+            </div>
+            <div id="teacherLogin" class="card-glass p-8 max-w-sm mx-auto text-center">
+                <i class="fa-solid fa-shield-halved text-4xl mb-4" style="color:var(--teal);"></i>
+                <p class="mb-4 text-sm" style="color:var(--muted);">کد ورود معلم را وارد کنید</p>
+                <input type="password" id="teacherPin" class="input-field mb-4" placeholder="کد ورود" maxlength="10" aria-label="کد ورود معلم">
+                <button class="btn-primary w-full" onclick="teacherLogin()">ورود</button>
+                <p id="teacherError" class="text-xs mt-3" style="color:var(--wrong);display:none;">کد ورود اشتباه است</p>
+            </div>
+            <div id="teacherContent" style="display:none;">
+                <div class="flex flex-wrap gap-3 mb-4 items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <input type="text" id="teacherSearch" class="input-field" style="width:200px;text-align:right;font-size:0.9rem;" placeholder="جستجوی نام..." oninput="renderTeacherTable()">
+                    </div>
+                    <button class="btn-secondary text-sm" style="color:#EF4444;border-color:rgba(239,68,68,0.4);background:rgba(239,68,68,0.1);" onclick="clearAllData()">
+                        <i class="fa-solid fa-trash ml-1"></i>پاک‌سازی کل داده‌ها
+                    </button>
+                </div>
+                <div class="card-glass p-4 overflow-x-auto" id="teacherTableContainer">
+                    <div class="text-center py-8"><div class="loader"></div><p class="mt-3 text-sm" style="color:var(--muted);">در حال بارگذاری...</p></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="pdfContent"></div>
+    <div id="toast" class="toast"></div>
+
+    <script>
+    // ============================================================
+    //   تنظیمات Supabase - این قسمت را با اطلاعات خودت پر کن
+    // ============================================================
+    const SUPABASE_URL = 'https://YOUR_PROJECT.supabase.co';  // ← آدرس پروژه
+    const SUPABASE_KEY = 'YOUR_ANON_KEY';                     // ← کلید عمومی
+
+    // ============================================================
+    //   اتصال به Supabase
+    // ============================================================
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // ============================================================
+    //   داده‌ها و حالت بازی
+    // ============================================================
+    const allQuestions = [
+        {
+            text: "تعداد سیارات منظومه شمسی چقدر است؟",
+            options: ["۹ سیاره", "۷ سیاره", "۸ سیاره", "۱۰ سیاره"],
+            correct: 2,
+            category: "منظومه شمسی",
+            fact: "پلوتو در سال ۲۰۰۶ از لیست سیارات حذف شد و حالا ۸ سیاره داریم!",
+            explain: "منظومه شمسی ما دقیقاً ۸ سیاره دارد: عطارد، ناهید، زمین، مریخ، مشتری، زحل، اورانوس و نپتون."
+        },
+        {
+            text: "کدام سیاره به زمین نزدیک‌تر است و در آسمان با چشم غیرمسلح دیده می‌شود؟",
+            options: ["مشتری", "نپتون", "زهره", "زحل"],
+            correct: 2,
+            category: "سیارات",
+            fact: "زهره به خواهر زمین معروف است چون اندازه‌اش شبیه زمین است.",
+            explain: "سیاره زهره (ناهید) نزدیک‌ترین سیاره به زمین است و به عنوان ستاره صبح یا عصر دیده می‌شود."
+        },
+        {
+            text: "کدام جرم آسمانی از خود نوری ندارد و به دور خورشید می‌چرخد؟",
+            options: ["ستاره", "سیاره", "خورشید", "شهاب‌سنگ"],
+            correct: 1,
+            category: "جرم آسمانی",
+            fact: "سیارات مثل آینه، نور خورشید را بازتاب می‌دهند.",
+            explain: "سیارات نور خودشان را ندارند. آن‌ها نور خورشید را منعکس می‌کنند که باعث می‌شود ما بتوانیمشان ببینیم."
+        },
+        {
+            text: "نزدیک‌ترین ستاره به زمین کدام است؟",
+            options: ["ماه", "خورشید", "ستاره قطبی", "تیر"],
+            correct: 1,
+            category: "ستارگان",
+            fact: "خورشید یک ستاره متوسط است، اما میلیاردها ستاره دیگر در کهکشان راه شیری وجود دارد!",
+            explain: "خورشید نزدیک‌ترین ستاره به زمین است. فاصله زمین تا خورشید حدود ۱۵۰ میلیون کیلومتر است."
+        },
+        {
+            text: "دورترین سیاره منظومه شمسی چه نام دارد؟",
+            options: ["اورانوس", "زحل", "نپتون", "مشتری"],
+            correct: 2,
+            category: "سیارات",
+            fact: "نپتون ۱۶۵ سال زمینی طول می‌کشد تا یک بار به دور خورشید بچرخد!",
+            explain: "نپتون هشتمین و دورترین سیاره منظومه شمسی از خورشید است."
+        },
+        {
+            text: "اولین رصدخانه ایران کجا ساخته شد؟",
+            options: ["اصفهان", "مشهد", "شیراز", "ری"],
+            correct: 3,
+            category: "تاریخ علم",
+            fact: "ری در گذشته یکی از مهم‌ترین مراکز علمی ایران و جهان اسلام بود.",
+            explain: "اولین رصدخانه ایران در شهر ری (نزدیک تهران امروزی) ساخته شد."
+        },
+        {
+            text: "بزرگ‌ترین سیاره منظومه شمسی کدام است؟",
+            options: ["زحل", "مشتری", "نپتون", "اورانوس"],
+            correct: 1,
+            category: "سیارات",
+            fact: "مشتری آنقدر بزرگ است که بیش از ۱۳۰۰ زمین در آن جا می‌شود!",
+            explain: "مشتری بزرگ‌ترین سیاره منظومه شمسی است و حتی بزرگ‌تر از تمام سیارات دیگر با هم است."
+        },
+        {
+            text: "زمین در هر چند روز یک بار به دور خورشید می‌چرخد؟",
+            options: ["۳۰ روز", "۹۰ روز", "۳۶۵ روز", "۱۸۰ روز"],
+            correct: 2,
+            category: "زمین",
+            fact: "همین چرخش ۳۶۵ روزه باعث ایجاد فصل‌های مختلف در زمین می‌شود!",
+            explain: "زمین حدود ۳۶۵ روز و ۶ ساعت طول می‌کشد تا یک بار کامل به دور خورشید بچرخد."
+        },
+        {
+            text: "چهارمین سیاره منظومه شمسی کدام است؟",
+            options: ["زهره", "زمین", "مریخ", "مشتری"],
+            correct: 2,
+            category: "سیارات",
+            fact: "مریخ به دلیل رنگ قرمزش به سیاره سرخ معروف است. یک روز مریخ تقریباً مثل زمین است!",
+            explain: "ترتیب سیارات: عطارد، ناهید، زمین، مریخ. پس مریخ چهارمین سیاره است."
+        },
+        {
+            text: "ماه نور خود را از کجا می‌گیرد؟",
+            options: ["خورشید", "ستاره‌ها", "زمین", "خودش"],
+            correct: 0,
+            category: "ماه",
+            fact: "ماه حتی یک ذره نور هم از خودش ندارد، تمام نور ماه از خورشید است!",
+            explain: "ماه نور خورشید را بازتاب می‌دهد. بخش روشن ماه جایی است که خورشید به آن می‌تابد."
+        }
+    ];
+
+    const correctMessages = [
+        "آفرین! درسته!", "عالی بود!", "خیلی خوبه!", "درسته! ادامه بده!",
+        "دقیقاً! مهارت داری!", "ممتاز!", "برووو!", "فوق‌العاده‌ای!"
+    ];
+    const wrongMessages = [
+        "اینگه نبود! جواب درست رو ببین.",
+        "اشکالی نداره! حالا جواب درست رو یاد می‌گیری.",
+        "نه! اما نگران نباش، از اشتباه یاد می‌گیریم."
+    ];
+
+    const letters = ['الف', 'ب', 'ج', 'د'];
+
+    let state = {
+        studentName: '',
+        currentQuestion: 0,
+        score: 0,
+        streak: 0,
+        maxStreak: 0,
+        answers: [],
+        questions: [],
+        startTime: null,
+        answered: false
+    };
+
+    // ===== توابع کمکی =====
+    function shuffle(arr) {
+        const a = [...arr];
+        for (let i = a.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [a[i], a[j]] = [a[j], a[i]];
+        }
+        return a;
+    }
+
+    function toPersianNum(n) {
+        const fa = ['۰','۱','۲','۳','۴','۵','۶','۷','۸','۹'];
+        return String(n).replace(/\d/g, d => fa[d]);
+    }
+
+    function formatDate(ts) {
+        const d = new Date(ts);
+        return toPersianNum(d.getFullYear()) + '/' + toPersianNum(String(d.getMonth()+1).padStart(2,'0')) + '/' + toPersianNum(String(d.getDate()).padStart(2,'0')) + ' - ' + toPersianNum(String(d.getHours()).padStart(2,'0')) + ':' + toPersianNum(String(d.getMinutes()).padStart(2,'0'));
+    }
+
+    // ===== صدا =====
+    let audioCtx = null;
+    function getAudioCtx() {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        return audioCtx;
+    }
+
+    function playCorrectSound() {
+        try {
+            const ctx = getAudioCtx();
+            const now = ctx.currentTime;
+            [523.25, 659.25, 783.99].forEach((freq, i) => {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, now + i * 0.1);
+                gain.gain.setValueAtTime(0.25, now + i * 0.1);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.1 + 0.3);
+                osc.connect(gain); gain.connect(ctx.destination);
+                osc.start(now + i * 0.1); osc.stop(now + i * 0.1 + 0.3);
+            });
+        } catch(e) {}
+    }
+
+    function playWrongSound() {
+        try {
+            const ctx = getAudioCtx();
+            const now = ctx.currentTime;
+            [330, 262].forEach((freq, i) => {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(freq, now + i * 0.15);
+                gain.gain.setValueAtTime(0.18, now + i * 0.15);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.15 + 0.25);
+                osc.connect(gain); gain.connect(ctx.destination);
+                osc.start(now + i * 0.15); osc.stop(now + i * 0.15 + 0.25);
+            });
+        } catch(e) {}
+    }
+
+    function playVictorySound() {
+        try {
+            const ctx = getAudioCtx();
+            const now = ctx.currentTime;
+            const melody = [523.25, 587.33, 659.25, 783.99, 880, 1046.5];
+            melody.forEach((freq, i) => {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, now + i * 0.12);
+                gain.gain.setValueAtTime(0.2, now + i * 0.12);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.12 + 0.35);
+                osc.connect(gain); gain.connect(ctx.destination);
+                osc.start(now + i * 0.12); osc.stop(now + i * 0.12 + 0.35);
+            });
+        } catch(e) {}
+    }
+
+    function playTrophySound() {
+        try {
+            const ctx = getAudioCtx();
+            const now = ctx.currentTime;
+            [392, 523.25, 659.25, 783.99, 659.25, 783.99, 1046.5].forEach((freq, i) => {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, now + i * 0.15);
+                gain.gain.setValueAtTime(0.22, now + i * 0.15);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.15 + 0.4);
+                osc.connect(gain); gain.connect(ctx.destination);
+                osc.start(now + i * 0.15); osc.stop(now + i * 0.15 + 0.4);
+            });
+        } catch(e) {}
+    }
+
+    // ===== ستاره‌ها =====
+    const starCanvas = document.getElementById('starCanvas');
+    const starCtx = starCanvas.getContext('2d');
+    let stars = [];
+
+    function initStars() {
+        starCanvas.width = window.innerWidth;
+        starCanvas.height = window.innerHeight;
+        stars = [];
+        const count = Math.floor((starCanvas.width * starCanvas.height) / 3000);
+        for (let i = 0; i < count; i++) {
+            stars.push({
+                x: Math.random() * starCanvas.width,
+                y: Math.random() * starCanvas.height,
+                r: Math.random() * 1.5 + 0.3,
+                alpha: Math.random(),
+                speed: Math.random() * 0.005 + 0.002,
+                phase: Math.random() * Math.PI * 2
+            });
+        }
+    }
+
+    function drawStars(time) {
+        starCtx.clearRect(0, 0, starCanvas.width, starCanvas.height);
+        stars.forEach(s => {
+            const a = 0.3 + 0.7 * Math.abs(Math.sin(time * s.speed + s.phase));
+            starCtx.beginPath();
+            starCtx.arc(s.x, s.y, Math.max(0.1, s.r), 0, Math.PI * 2);
+            starCtx.fillStyle = `rgba(255,255,255,${a})`;
+            starCtx.fill();
+        });
+        requestAnimationFrame(drawStars);
+    }
+
+    window.addEventListener('resize', initStars);
+    initStars();
+    requestAnimationFrame(drawStars);
+
+    // ===== کانفتی =====
+    const confettiCanvas = document.getElementById('confettiCanvas');
+    const confettiCtx = confettiCanvas.getContext('2d');
+    let confettiPieces = [];
+    let confettiActive = false;
+
+    function resizeConfetti() {
+        confettiCanvas.width = window.innerWidth;
+        confettiCanvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeConfetti);
+    resizeConfetti();
+
+    const confettiColors = ['#FBBF24','#10B981','#06B6D4','#F97316','#EF4444','#8B5CF6','#EC4899','#FFFFFF'];
+
+    function spawnConfetti(count = 60) {
+        for (let i = 0; i < count; i++) {
+            confettiPieces.push({
+                x: Math.random() * confettiCanvas.width,
+                y: -20 - Math.random() * 100,
+                w: Math.random() * 10 + 5,
+                h: Math.random() * 6 + 3,
+                color: confettiColors[Math.floor(Math.random() * confettiColors.length)],
+                vx: (Math.random() - 0.5) * 4,
+                vy: Math.random() * 3 + 2,
+                rot: Math.random() * 360,
+                rotSpeed: (Math.random() - 0.5) * 10,
+                life: 1
+            });
+        }
+        if (!confettiActive) {
+            confettiActive = true;
+            animateConfetti();
+        }
+    }
+
+    function spawnBigConfetti() {
+        for (let i = 0; i < 150; i++) {
+            confettiPieces.push({
+                x: confettiCanvas.width / 2 + (Math.random() - 0.5) * 200,
+                y: confettiCanvas.height / 2,
+                w: Math.random() * 12 + 6,
+                h: Math.random() * 8 + 4,
+                color: confettiColors[Math.floor(Math.random() * confettiColors.length)],
+                vx: (Math.random() - 0.5) * 12,
+                vy: -Math.random() * 10 - 3,
+                rot: Math.random() * 360,
+                rotSpeed: (Math.random() - 0.5) * 15,
+                life: 1
+            });
+        }
+        if (!confettiActive) {
+            confettiActive = true;
+            animateConfetti();
+        }
+    }
+
+    function animateConfetti() {
+        confettiCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+        confettiPieces.forEach(p => {
+            p.x += p.vx;
+            p.vy += 0.1;
+            p.y += p.vy;
+            p.rot += p.rotSpeed;
+            p.life -= 0.005;
+            confettiCtx.save();
+            confettiCtx.translate(p.x, p.y);
+            confettiCtx.rotate(p.rot * Math.PI / 180);
+            confettiCtx.globalAlpha = Math.max(0, p.life);
+            confettiCtx.fillStyle = p.color;
+            confettiCtx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+            confettiCtx.restore();
+        });
+        confettiPieces = confettiPieces.filter(p => p.life > 0 && p.y < confettiCanvas.height + 50);
+        if (confettiPieces.length > 0) {
+            requestAnimationFrame(animateConfetti);
+        } else {
+            confettiActive = false;
+            confettiCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+        }
+    }
+
+    // ===== توست =====
+    function showToast(msg, type = 'info', duration = 3000) {
+        const t = document.getElementById('toast');
+        t.textContent = msg;
+        t.className = `toast ${type}`;
+        requestAnimationFrame(() => t.classList.add('show'));
+        setTimeout(() => t.classList.remove('show'), duration);
+    }
+
+    // ===== مدیریت صفحات =====
+    function showScreen(id) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+    }
+
+    // ============================================================
+    //   توابع ذخیره‌سازی در Supabase
+    // ============================================================
+    async function saveResultToSupabase(result) {
+        try {
+            const { data, error } = await supabase
+                .from('quiz_results')  // اسم جدول
+                .insert([
+                    {
+                        name: result.name,
+                        score: result.score,
+                        correct: result.correct,
+                        wrong: result.wrong,
+                        time: result.time,
+                        max_streak: result.maxStreak,
+                        created_at: new Date(result.timestamp).toISOString()
+                    }
+                ]);
+
+            if (error) {
+                console.error('❌ خطا در ذخیره در Supabase:', error);
+                // اگر خطا داشت، در localStorage ذخیره کن
+                saveToLocalStorage(result);
+                return false;
+            }
+            console.log('✅ نتیجه با موفقیت در Supabase ذخیره شد');
+            return true;
+        } catch (e) {
+            console.error('❌ خطا:', e);
+            // در صورت خطا، در localStorage ذخیره کن
+            saveToLocalStorage(result);
+            return false;
+        }
+    }
+
+    // ===== ذخیره در localStorage (به عنوان پشتیبان) =====
+    function saveToLocalStorage(result) {
+        const data = getAllLocalData();
+        data.push(result);
+        localStorage.setItem('solarQuizData', JSON.stringify(data));
+        console.log('💾 نتیجه در localStorage ذخیره شد (پشتیبان)');
+    }
+
+    function getAllLocalData() {
+        try { return JSON.parse(localStorage.getItem('solarQuizData') || '[]'); }
+        catch(e) { return []; }
+    }
+
+    function getStudentLocalResults(name) {
+        return getAllLocalData().filter(r => r.name === name);
+    }
+
+    // ===== دریافت نتایج از Supabase =====
+    async function getResultsFromSupabase(name = null) {
+        try {
+            let query = supabase.from('quiz_results').select('*');
+            if (name) {
+                query = query.eq('name', name);
+            }
+            const { data, error } = await query.order('created_at', { ascending: false });
+
+            if (error) {
+                console.error('❌ خطا در دریافت از Supabase:', error);
+                return null;
+            }
+            return data;
+        } catch (e) {
+            console.error('❌ خطا:', e);
+            return null;
+        }
+    }
+
+    // ===== دریافت ترکیبی (اول از Supabase، سپس localStorage) =====
+    async function getAllResults(name = null) {
+        // اول از Supabase بگیر
+        const supabaseData = await getResultsFromSupabase(name);
+        
+        // بعد از localStorage بگیر
+        const localData = name ? getStudentLocalResults(name) : getAllLocalData();
+        
+        // ترکیب و حذف موارد تکراری (بر اساس timestamp)
+        const all = [...(supabaseData || []), ...localData];
+        const seen = new Set();
+        return all.filter(item => {
+            const key = item.name + item.score + item.created_at;
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+        });
+    }
+
+    // ============================================================
+    //   صفحه نخست
+    // ============================================================
+    const nameInput = document.getElementById('studentNameInput');
+    const startBtn = document.getElementById('startBtn');
+
+    async function checkPreviousResults() {
+        const name = nameInput.value.trim();
+        const reportBtn = document.getElementById('viewReportBtn');
+        if (name.length >= 2) {
+            const results = await getAllResults(name);
+            reportBtn.style.display = results.length > 0 ? 'inline-flex' : 'none';
+        } else {
+            reportBtn.style.display = 'none';
+        }
+    }
+
+    nameInput.addEventListener('input', () => {
+        startBtn.disabled = nameInput.value.trim().length < 2;
+        checkPreviousResults();
+    });
+
+    nameInput.addEventListener('keydown', e => {
+        if (e.key === 'Enter' && !startBtn.disabled) startQuiz();
+    });
+
+    startBtn.addEventListener('click', startQuiz);
+
+    document.getElementById('viewReportBtn').addEventListener('click', () => {
+        if (nameInput.value.trim().length >= 2) {
+            state.studentName = nameInput.value.trim();
+            showReportCard();
+        }
+    });
+
+    // ============================================================
+    //   شروع آزمون
+    // ============================================================
+    function startQuiz() {
+        const name = nameInput.value.trim();
+        if (name.length < 2) {
+            showToast('لطفاً نام خود را وارد کنید.', 'error', 2000);
+            return;
+        }
+        state.studentName = name;
+        state.currentQuestion = 0;
+        state.score = 0;
+        state.streak = 0;
+        state.maxStreak = 0;
+        state.answers = [];
+        state.questions = shuffle(allQuestions);
+        state.startTime = Date.now();
+        state.answered = false;
+
+        document.getElementById('quizStudentName').textContent = name;
+        document.getElementById('scoreDisplay').textContent = '۰';
+        document.getElementById('streakBadge').style.display = 'none';
+        buildRocketTrack();
+        showScreen('quizScreen');
+        showQuestion();
+    }
+
+    // ===== مسیر موشک =====
+    function buildRocketTrack() {
+        const track = document.getElementById('rocketTrack');
+        track.innerHTML = '';
+        for (let i = 0; i < 10; i++) {
+            const dot = document.createElement('div');
+            dot.className = 'track-dot' + (i === 0 ? ' current' : '');
+            dot.id = `dot-${i}`;
+            track.appendChild(dot);
+        }
+        const rocket = document.createElement('div');
+        rocket.className = 'rocket-icon';
+        rocket.id = 'rocketIcon';
+        rocket.innerHTML = '<i class="fa-solid fa-rocket" style="transform:scaleX(-1);"></i>';
+        const firstDot = document.getElementById('dot-0');
+        firstDot.style.position = 'relative';
+        firstDot.appendChild(rocket);
+    }
+
+    function updateRocketTrack(qIndex, isCorrect) {
+        const prevDot = document.getElementById(`dot-${qIndex - 1}`);
+        if (prevDot) {
+            prevDot.classList.remove('current');
+            prevDot.classList.add(isCorrect ? 'done-correct' : 'done-wrong');
+        }
+        const rocket = document.getElementById('rocketIcon');
+        const curDot = document.getElementById(`dot-${qIndex}`);
+        if (rocket && curDot) {
+            curDot.classList.add('current');
+            curDot.style.position = 'relative';
+            curDot.appendChild(rocket);
+        }
+    }
+
+    // ===== نمایش سوال =====
+    function showQuestion() {
+        state.answered = false;
+        const q = state.questions[state.currentQuestion];
+        const idx = state.currentQuestion;
+
+        document.getElementById('questionCounter').textContent = toPersianNum(idx + 1) + ' از ۱۰';
+        document.getElementById('progressBar').style.width = ((idx) / 10 * 100) + '%';
+        document.getElementById('categoryBadge').textContent = q.category;
+        document.getElementById('questionText').textContent = q.text;
+        document.getElementById('feedbackArea').style.display = 'none';
+
+        const container = document.getElementById('optionsContainer');
+        container.innerHTML = '';
+        q.options.forEach((opt, i) => {
+            const btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.innerHTML = `<span class="option-letter">${letters[i]}</span><span>${opt}</span>`;
+            btn.addEventListener('click', () => selectAnswer(i));
+            btn.style.animation = `slideIn 0.4s ease ${i * 0.08}s both`;
+            container.appendChild(btn);
+        });
+
+        const card = document.getElementById('questionCard');
+        card.style.animation = 'none';
+        card.offsetHeight;
+        card.style.animation = 'slideIn 0.5s ease';
+
+        if (idx > 0) {
+            const lastAnswer = state.answers[idx - 1];
+            updateRocketTrack(idx, lastAnswer.correct);
+        }
+    }
+
+    // ===== انتخاب پاسخ =====
+    function selectAnswer(index) {
+        if (state.answered) return;
+        state.answered = true;
+
+        const q = state.questions[state.currentQuestion];
+        const isCorrect = index === q.correct;
+
+        state.answers.push({
+            questionIndex: q.text,
+            selected: index,
+            correct: isCorrect,
+            correctAnswer: q.correct
+        });
+
+        if (isCorrect) {
+            state.score += 10;
+            state.streak++;
+            if (state.streak > state.maxStreak) state.maxStreak = state.streak;
+            document.getElementById('scoreDisplay').textContent = toPersianNum(state.score);
+            playCorrectSound();
+            spawnConfetti(50);
+        } else {
+            state.streak = 0;
+            playWrongSound();
+        }
+
+        const streakBadge = document.getElementById('streakBadge');
+        if (state.streak >= 2) {
+            streakBadge.style.display = 'inline-flex';
+            document.getElementById('streakCount').textContent = toPersianNum(state.streak);
+        } else {
+            streakBadge.style.display = 'none';
+        }
+
+        const btns = document.querySelectorAll('.option-btn');
+        btns.forEach((btn, i) => {
+            btn.classList.add('disabled');
+            if (i === q.correct) btn.classList.add('correct');
+            if (i === index && !isCorrect) btn.classList.add('wrong');
+        });
+
+        const feedbackArea = document.getElementById('feedbackArea');
+        const feedbackBox = document.getElementById('feedbackBox');
+        feedbackArea.style.display = 'block';
+
+        if (isCorrect) {
+            feedbackBox.style.background = 'rgba(16,185,129,0.1)';
+            feedbackBox.style.border = '1px solid rgba(16,185,129,0.3)';
+            feedbackBox.style.color = '#6EE7B7';
+            const msg = correctMessages[Math.floor(Math.random() * correctMessages.length)];
+            feedbackBox.innerHTML = `<div class="flex items-center gap-2 mb-2"><i class="fa-solid fa-circle-check"></i><strong>${msg}</strong></div><div style="color:var(--muted);font-size:0.82rem;"><i class="fa-solid fa-lightbulb ml-1" style="color:var(--gold);"></i>${q.fact}</div>`;
+        } else {
+            feedbackBox.style.background = 'rgba(249,115,22,0.1)';
+            feedbackBox.style.border = '1px solid rgba(249,115,22,0.3)';
+            feedbackBox.style.color = '#FDBA74';
+            const msg = wrongMessages[Math.floor(Math.random() * wrongMessages.length)];
+            feedbackBox.innerHTML = `<div class="flex items-center gap-2 mb-2"><i class="fa-solid fa-circle-xmark"></i><strong>${msg}</strong></div><div style="color:var(--muted);font-size:0.82rem;">${q.explain}</div>`;
+        }
+
+        const nextText = document.getElementById('nextBtnText');
+        nextText.textContent = state.currentQuestion < 9 ? 'سوال بعدی' : 'دیدن نتیجه';
+    }
+
+    document.getElementById('nextBtn').addEventListener('click', () => {
+        state.currentQuestion++;
+        if (state.currentQuestion < 10) {
+            showQuestion();
+        } else {
+            finishQuiz();
+        }
+    });
+
+    // ===== پایان آزمون =====
+    async function finishQuiz() {
+        const elapsed = Math.round((Date.now() - state.startTime) / 1000);
+        const minutes = Math.floor(elapsed / 60);
+        const seconds = elapsed % 60;
+        const timeStr = toPersianNum(minutes) + ':' + toPersianNum(String(seconds).padStart(2, '0'));
+
+        const result = {
+            name: state.studentName,
+            score: state.score,
+            total: 100,
+            correct: state.answers.filter(a => a.correct).length,
+            wrong: state.answers.filter(a => !a.correct).length,
+            time: timeStr,
+            timestamp: Date.now(),
+            maxStreak: state.maxStreak
+        };
+
+        // ذخیره در Supabase
+        showToast('در حال ذخیره نتیجه...', 'info', 2000);
+        const saved = await saveResultToSupabase(result);
+        
+        if (saved) {
+            showToast('نتیجه با موفقیت ذخیره شد!', 'success', 2000);
+        } else {
+            showToast('نتیجه به صورت محلی ذخیره شد.', 'info', 3000);
+        }
+
+        showResults(timeStr);
+    }
+
+    // ============================================================
+    //   نمایش نتایج
+    // ============================================================
+    function showResults(timeStr) {
+        const score = state.score;
+        const card = document.getElementById('resultsCard');
+        let html = '';
+
+        if (score === 100) {
+            playTrophySound();
+            setTimeout(() => spawnBigConfetti(), 300);
+            setTimeout(() => spawnBigConfetti(), 800);
+            html = `
+                <div class="trophy-container mb-4">
+                    <div class="trophy-glow mx-auto">
+                        <i class="fa-solid fa-trophy text-7xl" style="color:var(--gold);"></i>
+                    </div>
+                </div>
+                <h2 class="font-display text-3xl mb-2" style="color:var(--gold);">تبرییییک!</h2>
+                <p class="text-base mb-4" style="color:#6EE7B7;">تو تمام سوالات رو درست جواب دادی و قهرمان شدی!</p>
+                <div class="flex justify-center gap-4 mb-4">
+                    <div class="text-center"><div class="text-2xl font-bold" style="color:var(--gold);">${toPersianNum(score)}</div><div class="text-xs" style="color:var(--muted);">امتیاز</div></div>
+                    <div class="text-center"><div class="text-2xl font-bold" style="color:var(--teal);">${timeStr}</div><div class="text-xs" style="color:var(--muted);">زمان</div></div>
+                    <div class="text-center"><div class="text-2xl font-bold" style="color:#EF4444;"><i class="fa-solid fa-fire"></i> ${toPersianNum(state.maxStreak)}</div><div class="text-xs" style="color:var(--muted);">بیشترین استریک</div></div>
+                </div>
+            `;
+        } else if (score >= 80) {
+            playVictorySound();
+            spawnConfetti(80);
+            html = `
+                <div class="mb-4"><i class="fa-solid fa-medal text-6xl" style="color:var(--gold);animation:float 2s ease infinite;"></i></div>
+                <h2 class="font-display text-2xl mb-2" style="color:var(--gold);">آفرین! عالی بودی!</h2>
+                <p class="text-sm mb-4" style="color:var(--muted);line-height:1.8;">عملکردت واقعاً فوق‌العاده بود! فقط یه ذره بیشتر دقت کن تا بتونی جام قهرمانی رو هم ببری.</p>
+                <div class="flex justify-center gap-4 mb-4">
+                    <div class="text-center"><div class="text-2xl font-bold" style="color:var(--gold);">${toPersianNum(score)}</div><div class="text-xs" style="color:var(--muted);">امتیاز</div></div>
+                    <div class="text-center"><div class="text-2xl font-bold" style="color:var(--teal);">${timeStr}</div><div class="text-xs" style="color:var(--muted);">زمان</div></div>
+                    <div class="text-center"><div class="text-2xl font-bold" style="color:#EF4444;"><i class="fa-solid fa-fire"></i> ${toPersianNum(state.maxStreak)}</div><div class="text-xs" style="color:var(--muted);">استریک</div></div>
+                </div>
+            `;
+        } else if (score >= 60) {
+            playVictorySound();
+            html = `
+                <div class="mb-4"><i class="fa-solid fa-thumbs-up text-6xl" style="color:var(--teal);animation:float 2s ease infinite;"></i></div>
+                <h2 class="font-display text-2xl mb-2" style="color:var(--teal);">خوب بود!</h2>
+                <p class="text-sm mb-4" style="color:var(--muted);line-height:1.8;">کار خوبی کردی! اگه یه کم بیشتر تمرکز کنی، مطمئنم امتیاز خیلی بهتری می‌گیری. ادامه بده!</p>
+                <div class="flex justify-center gap-4 mb-4">
+                    <div class="text-center"><div class="text-2xl font-bold" style="color:var(--gold);">${toPersianNum(score)}</div><div class="text-xs" style="color:var(--muted);">امتیاز</div></div>
+                    <div class="text-center"><div class="text-2xl font-bold" style="color:var(--teal);">${timeStr}</div><div class="text-xs" style="color:var(--muted);">زمان</div></div>
+                    <div class="text-center"><div class="text-2xl font-bold" style="color:#EF4444;"><i class="fa-solid fa-fire"></i> ${toPersianNum(state.maxStreak)}</div><div class="text-xs" style="color:var(--muted);">استریک</div></div>
+                </div>
+            `;
+        } else {
+            html = `
+                <div class="mb-4"><i class="fa-solid fa-seedling text-6xl" style="color:#10B981;animation:float 2s ease infinite;"></i></div>
+                <h2 class="font-display text-2xl mb-2" style="color:#10B981;">تلاشت عالی بود!</h2>
+                <p class="text-sm mb-4" style="color:var(--muted);line-height:1.8;">شکست بخشی از یادگیریه! تو با تلاش بیشتر و مرور مطالب، نتایج خیلی بهتری کسب می‌کنی. دوباره امتحان کن!</p>
+                <div class="flex justify-center gap-4 mb-4">
+                    <div class="text-center"><div class="text-2xl font-bold" style="color:var(--gold);">${toPersianNum(score)}</div><div class="text-xs" style="color:var(--muted);">امتیاز</div></div>
+                    <div class="text-center"><div class="text-2xl font-bold" style="color:var(--teal);">${timeStr}</div><div class="text-xs" style="color:var(--muted);">زمان</div></div>
+                </div>
+            `;
+        }
+
+        html += `<div class="text-right mt-4 mb-2"><strong class="text-sm" style="color:var(--teal);">مرور پاسخ‌ها:</strong></div>`;
+        html += `<div class="text-right max-h-48 overflow-y-auto px-1" style="scrollbar-width:thin;">`;
+        state.answers.forEach((a, i) => {
+            const q = state.questions[i];
+            const icon = a.correct
+                ? '<i class="fa-solid fa-circle-check" style="color:var(--correct);"></i>'
+                : '<i class="fa-solid fa-circle-xmark" style="color:var(--wrong);"></i>';
+            let detail = `سوال ${toPersianNum(i+1)}: ${a.correct ? 'درست' : 'اشتباه'}`;
+            if (!a.correct) detail += ` — جواب درست: ${q.options[q.correct]}`;
+            html += `<div class="answer-review">${icon}<span class="review-text">${detail}</span></div>`;
+        });
+        html += `</div>`;
+
+        html += `
+            <div class="flex flex-col gap-3 mt-6">
+                <button class="btn-primary w-full" onclick="resetAndStartQuiz()">
+                    <i class="fa-solid fa-rotate-right ml-2"></i>تلاش دوباره
+                </button>
+                <button class="btn-secondary w-full" onclick="showReportCard()">
+                    <i class="fa-solid fa-file-lines ml-1"></i>مشاهده کارنامه
+                </button>
+                <button class="btn-secondary w-full" onclick="backToHome()" style="color:var(--muted);border-color:rgba(255,255,255,0.1);background:rgba(255,255,255,0.03);">
+                    <i class="fa-solid fa-house ml-1"></i>بازگشت به خانه
+                </button>
+            </div>
+        `;
+
+        card.innerHTML = html;
+        card.style.animation = 'none';
+        card.offsetHeight;
+        card.style.animation = 'popIn 0.6s ease';
+        showScreen('resultsScreen');
+    }
+
+    function resetAndStartQuiz() {
+        state.studentName = document.getElementById('studentNameInput').value.trim();
+        startQuiz();
+    }
+
+    function backToHome() {
+        const name = state.studentName || document.getElementById('studentNameInput').value.trim();
+        if (name) {
+            document.getElementById('studentNameInput').value = name;
+            checkPreviousResults();
+        }
+        startBtn.disabled = false;
+        showScreen('homeScreen');
+    }
+
+    // ============================================================
+    //   کارنامه
+    // ============================================================
+    async function showReportCard() {
+        if (!state.studentName) {
+            state.studentName = document.getElementById('studentNameInput').value.trim() || 'کاربر';
+        }
+        
+        const results = await getAllResults(state.studentName);
+        const container = document.getElementById('reportContent');
+
+        if (!container) return;
+
+        if (results.length === 0) {
+            container.innerHTML = `<div class="text-center py-8"><i class="fa-solid fa-inbox text-4xl mb-3" style="color:var(--muted);"></i><p style="color:var(--muted);">هنوز تلاشی ثبت نشده!</p></div>`;
+        } else {
+            const bestScore = Math.max(...results.map(r => r.score));
+            let html = `
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <div class="text-sm" style="color:var(--muted);">نام دانش‌آموز</div>
+                        <div class="font-bold text-lg">${state.studentName}</div>
+                    </div>
+                    <div class="text-left">
+                        <div class="text-sm" style="color:var(--muted);">بهترین نتیجه</div>
+                        <div class="font-bold text-lg" style="color:var(--gold);">${toPersianNum(bestScore)} از ۱۰۰</div>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="report-table">
+                        <thead><tr>
+                            <th>شماره</th>
+                            <th>تاریخ و ساعت</th>
+                            <th>امتیاز</th>
+                            <th>درست</th>
+                            <th>اشتباه</th>
+                            <th>زمان</th>
+                            <th>استریک</th>
+                        </tr></thead>
+                        <tbody>
+            `;
+            results.forEach((r, i) => {
+                const isBest = r.score === bestScore;
+                html += `<tr class="${isBest ? 'best-row' : ''}">
+                    <td>${toPersianNum(i + 1)}</td>
+                    <td style="font-size:0.8rem;">${formatDate(r.timestamp || Date.now())}</td>
+                    <td><strong>${toPersianNum(r.score)}</strong>${isBest ? ' <i class="fa-solid fa-crown" style="color:var(--gold);font-size:0.7rem;"></i>' : ''}</td>
+                    <td style="color:var(--correct);">${toPersianNum(r.correct)}</td>
+                    <td style="color:var(--wrong);">${toPersianNum(r.wrong)}</td>
+                    <td>${r.time || '-'}</td>
+                    <td>${toPersianNum(r.maxStreak || 0)}</td>
+                </tr>`;
+            });
+            html += '</tbody></table></div>';
+
+            if (results.length > 1) {
+                html += `<div class="mt-5"><div class="text-sm font-bold mb-3" style="color:var(--teal);">نمودار پیشرفت:</div><div class="flex items-end gap-2 justify-center" style="height:100px;">`;
+                const maxS = 100;
+                results.forEach((r, i) => {
+                    const h = Math.max(8, (r.score / maxS) * 90);
+                    const isBest = r.score === bestScore;
+                    const color = isBest ? 'var(--gold)' : (r.score >= 80 ? 'var(--correct)' : (r.score >= 60 ? 'var(--teal)' : 'var(--wrong)'));
+                    html += `<div class="flex flex-col items-center gap-1">
+                        <span class="text-xs font-bold" style="color:${color};">${toPersianNum(r.score)}</span>
+                        <div style="width:28px;height:${h}px;background:${color};border-radius:6px 6px 2px 2px;opacity:${isBest?1:0.6};transition:height 0.5s ease;"></div>
+                        <span class="text-xs" style="color:var(--muted);">${toPersianNum(i+1)}</span>
+                    </div>`;
+                });
+                html += '</div></div>';
+            }
+
+            container.innerHTML = html;
+        }
+        showScreen('reportScreen');
+    }
+
+    // ============================================================
+    //   دانلود PDF
+    // ============================================================
+    async function downloadPDF() {
+        if (!state.studentName) {
+            state.studentName = document.getElementById('studentNameInput').value.trim() || 'کاربر';
+        }
+        
+        const results = await getAllResults(state.studentName);
+        
+        if (results.length === 0) {
+            showToast('هیچ نتیجه‌ای برای دانلود وجود ندارد!', 'error', 3000);
+            return;
+        }
+        
+        showToast('در حال ساخت PDF...', 'info');
+
+        const bestScore = Math.max(...results.map(r => r.score));
+
+        const pdfDiv = document.getElementById('pdfContent');
+        let tableRows = '';
+        results.forEach((r, i) => {
+            const isBest = r.score === bestScore;
+            tableRows += `<tr class="${isBest ? 'best-row' : ''}">
+                <td>${i + 1}</td>
+                <td>${formatDate(r.timestamp || Date.now())}</td>
+                <td>${r.score} از ۱۰۰</td>
+                <td>${r.correct}</td>
+                <td>${r.wrong}</td>
+                <td>${r.time || '-'}</td>
+                <td>${r.maxStreak || 0}</td>
+            </tr>`;
+        });
+
+        pdfDiv.innerHTML = `
+            <h2>کارنامه دانش‌آموز</h2>
+            <div class="pdf-subtitle">آزمون سفر به منظومه شمسی</div>
+            <div class="pdf-info">
+                <span>نام: ${state.studentName}</span>
+                <span>تعداد تلاش‌ها: ${results.length}</span>
+                <span>بهترین نتیجه: ${bestScore} از ۱۰۰</span>
+            </div>
+            <div class="pdf-best">
+                <i class="fa-solid fa-trophy" style="color:#D97706;"></i>
+                بهترین امتیاز: ${bestScore} از ۱۰۰
+            </div>
+            <table>
+                <thead><tr>
+                    <th>شماره</th><th>تاریخ و ساعت</th><th>امتیاز</th><th>درست</th><th>اشتباه</th><th>زمان</th><th>استریک</th>
+                </tr></thead>
+                <tbody>${tableRows}</tbody>
+            </table>
+            <div class="pdf-footer">طراح: آموزگار دربکی | آزمون سفر به منظومه شمسی</div>
+        `;
+
+        pdfDiv.style.position = 'fixed';
+        pdfDiv.style.top = '0';
+        pdfDiv.style.left = '0';
+        pdfDiv.style.zIndex = '-1';
+        pdfDiv.style.opacity = '1';
+
+        try {
+            await new Promise(r => setTimeout(r, 300));
+            const canvas = await html2canvas(pdfDiv, {
+                scale: 2,
+                useCORS: true,
+                backgroundColor: '#ffffff',
+                logging: false
+            });
+            const imgData = canvas.toDataURL('image/png');
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            const pdfW = pdf.internal.pageSize.getWidth();
+            const pdfH = (canvas.height * pdfW) / canvas.width;
+            pdf.addImage(imgData, 'PNG', 0, 0, pdfW, Math.min(pdfH, pdf.internal.pageSize.getHeight()));
+            pdf.save(`کارنامه_${state.studentName}.pdf`);
+            showToast('PDF با موفقیت ساخته شد!', 'success');
+        } catch(e) {
+            console.error(e);
+            showToast('خطا در ساخت PDF. از دکمه چاپ استفاده کنید.', 'error', 4000);
+        }
+
+        pdfDiv.style.position = 'fixed';
+        pdfDiv.style.top = '-9999px';
+        pdfDiv.style.left = '-9999px';
+    }
+
+    // ============================================================
+    //   پنل معلم
+    // ============================================================
+    const TEACHER_PIN = '1234';
+    document.getElementById('teacherPanelBtn').addEventListener('click', () => {
+        document.getElementById('teacherLogin').style.display = 'block';
+        document.getElementById('teacherContent').style.display = 'none';
+        document.getElementById('teacherPin').value = '';
+        document.getElementById('teacherError').style.display = 'none';
+        showScreen('teacherScreen');
+    });
+
+    document.getElementById('teacherPin').addEventListener('keydown', e => {
+        if (e.key === 'Enter') teacherLogin();
+    });
+
+    async function teacherLogin() {
+        const pin = document.getElementById('teacherPin').value;
+        if (pin === TEACHER_PIN) {
+            document.getElementById('teacherLogin').style.display = 'none';
+            document.getElementById('teacherContent').style.display = 'block';
+            await renderTeacherTable();
+        } else {
+            document.getElementById('teacherError').style.display = 'block';
+            document.getElementById('teacherPin').value = '';
+        }
+    }
+
+    async function renderTeacherTable() {
+        const searchInput = document.getElementById('teacherSearch');
+        const search = (searchInput?.value || '').trim();
+        let data = await getAllResults();
+        
+        if (search) {
+            data = data.filter(r => r.name && r.name.includes(search));
+        }
+        
+        const container = document.getElementById('teacherTableContainer');
+
+        if (!data || data.length === 0) {
+            container.innerHTML = `<div class="text-center py-8"><i class="fa-solid fa-inbox text-3xl mb-3" style="color:var(--muted);"></i><p style="color:var(--muted);">داده‌ای یافت نشد</p></div>`;
+            return;
+        }
+
+        const grouped = {};
+        data.forEach(r => {
+            if (!grouped[r.name]) grouped[r.name] = [];
+            grouped[r.name].push(r);
+        });
+
+        let html = `<table class="teacher-table"><thead><tr>
+            <th>نام</th><th>تعداد تلاش</th><th>بهترین امتیاز</th><th>آخرین تلاش</th><th>میانگین</th>
+        </tr></thead><tbody>`;
+
+        Object.entries(grouped).forEach(([name, attempts]) => {
+            const best = Math.max(...attempts.map(a => a.score));
+            const avg = Math.round(attempts.reduce((s, a) => s + a.score, 0) / attempts.length);
+            const last = attempts[attempts.length - 1];
+            html += `<tr>
+                <td class="font-bold">${name}</td>
+                <td>${toPersianNum(attempts.length)}</td>
+                <td style="color:var(--gold);font-weight:700;">${toPersianNum(best)}</td>
+                <td style="font-size:0.78rem;">${formatDate(last.timestamp || Date.now())}</td>
+                <td>${toPersianNum(avg)}</td>
+            </tr>`;
+        });
+
+        html += '</tbody></table>';
+        html += `<div class="text-xs mt-3 text-center" style="color:var(--muted);">مجموع ${toPersianNum(data.length)} تلاش از ${toPersianNum(Object.keys(grouped).length)} دانش‌آموز</div>`;
+        container.innerHTML = html;
+    }
+
+    function clearAllData() {
+        const existing = document.getElementById('confirmModal');
+        if (existing) existing.remove();
+
+        const modal = document.createElement('div');
+        modal.id = 'confirmModal';
+        modal.style.cssText = 'position:fixed;inset:0;z-index:300;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);';
+        modal.innerHTML = `
+            <div class="card-glass p-6 text-center" style="max-width:340px;animation:popIn 0.3s ease;">
+                <i class="fa-solid fa-triangle-exclamation text-3xl mb-3" style="color:var(--wrong);"></i>
+                <p class="mb-4 text-sm">آیا مطمئن هستید؟ تمام نتایج تمام دانش‌آموزان پاک خواهد شد.</p>
+                <div class="flex gap-3 justify-center">
+                    <button class="btn-secondary text-sm" style="color:var(--wrong);border-color:rgba(249,115,22,0.4);" onclick="confirmClear()">بله، پاک کن</button>
+                    <button class="btn-secondary text-sm" onclick="document.getElementById('confirmModal').remove()">انصراف</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+
+    async function confirmClear() {
+        // پاک کردن از Supabase
+        try {
+            const { error } = await supabase.from('quiz_results').delete().neq('id', 0);
+            if (error) {
+                console.error('خطا در پاک کردن Supabase:', error);
+            }
+        } catch(e) {
+            console.error('خطا:', e);
+        }
+        
+        // پاک کردن localStorage
+        localStorage.removeItem('solarQuizData');
+        document.getElementById('confirmModal').remove();
+        await renderTeacherTable();
+        showToast('تمام داده‌ها پاک شد.', 'info');
+    }
+
+    // ===== رویداد چاپ =====
+    window.addEventListener('beforeprint', () => {
+        // استایل چاپ
+    });
+
+    console.log('✅ برنامه با موفقیت بارگذاری شد!');
+    </script>
+</body>
+</html>
