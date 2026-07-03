@@ -9,8 +9,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    
-    <!-- ===== کتابخانه Supabase ===== -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <script>
@@ -27,6 +25,7 @@
     </script>
     
     <style>
+        /* ===== استایل‌های کامل ===== */
         :root {
             --bg: #0B1026;
             --bg-light: #111638;
@@ -261,7 +260,6 @@
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 99px; }
         
-        /* بارگذاری */
         .loader {
             display: inline-block;
             width: 20px;
@@ -288,7 +286,7 @@
             <h1 class="font-display text-3xl sm:text-4xl mb-3" style="color:var(--gold);text-shadow:0 0 30px rgba(251,191,36,0.3);">سفر به منظومه شمسی</h1>
             <p class="text-sm sm:text-base mb-8" style="color:var(--muted);line-height:1.8;">آماده‌ای درباره فضا چیزهای جدید یاد بگیری؟<br>۱۰ سوال جذاب منتظر توئه!</p>
             <div class="mb-6">
-                <input type="text" id="studentNameInput" class="input-field" placeholder="نام و نام خانوادگی تو چیه؟" maxlength="40" aria-label="نام دانش‌آموز">
+                <input type="text" id="studentNameInput" class="input-field" placeholder="نام و نام خانوادگی تو چیه؟" maxlength="40">
             </div>
             <button id="startBtn" class="btn-primary w-full mb-4" disabled>
                 <i class="fa-solid fa-rocket ml-2"></i>شروع سفر!
@@ -298,7 +296,7 @@
                     <i class="fa-solid fa-file-lines ml-1"></i>کارنامه من
                 </button>
             </div>
-            <button id="teacherPanelBtn" class="mt-6 text-xs cursor-pointer bg-transparent border-none" style="color:rgba(255,255,255,0.25);" aria-label="پنل معلم">
+            <button id="teacherPanelBtn" class="mt-6 text-xs cursor-pointer bg-transparent border-none" style="color:rgba(255,255,255,0.25);">
                 <i class="fa-solid fa-lock ml-1"></i>پنل معلم
             </button>
             <p class="mt-6 text-xs" style="color:rgba(255,255,255,0.2);">طراح: آموزگار دربکی</p>
@@ -381,7 +379,7 @@
             <div id="teacherLogin" class="card-glass p-8 max-w-sm mx-auto text-center">
                 <i class="fa-solid fa-shield-halved text-4xl mb-4" style="color:var(--teal);"></i>
                 <p class="mb-4 text-sm" style="color:var(--muted);">کد ورود معلم را وارد کنید</p>
-                <input type="password" id="teacherPin" class="input-field mb-4" placeholder="کد ورود" maxlength="10" aria-label="کد ورود معلم">
+                <input type="password" id="teacherPin" class="input-field mb-4" placeholder="کد ورود" maxlength="10">
                 <button class="btn-primary w-full" onclick="teacherLogin()">ورود</button>
                 <p id="teacherError" class="text-xs mt-3" style="color:var(--wrong);display:none;">کد ورود اشتباه است</p>
             </div>
@@ -406,18 +404,13 @@
 
     <script>
     // ============================================================
-    //   تنظیمات Supabase - این قسمت را با اطلاعات خودت پر کن
+    //   تنظیمات Supabase - این دو خط را با اطلاعات خودت پر کن
     // ============================================================
-    const SUPABASE_URL = 'https://YOUR_PROJECT.supabase.co';  // ← آدرس پروژه
-    const SUPABASE_KEY = 'YOUR_ANON_KEY';                     // ← کلید عمومی
+    const SUPABASE_URL = 'https://umyxarhminlnkmlnyuyl.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_pl4pUJrlRdkoAGjQPLobwg_RPTNLdCT';
 
     // ============================================================
-    //   اتصال به Supabase
-    // ============================================================
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-    // ============================================================
-    //   داده‌ها و حالت بازی
+    //   داده‌ها
     // ============================================================
     const allQuestions = [
         {
@@ -426,92 +419,84 @@
             correct: 2,
             category: "منظومه شمسی",
             fact: "پلوتو در سال ۲۰۰۶ از لیست سیارات حذف شد و حالا ۸ سیاره داریم!",
-            explain: "منظومه شمسی ما دقیقاً ۸ سیاره دارد: عطارد، ناهید، زمین، مریخ، مشتری، زحل، اورانوس و نپتون."
+            explain: "منظومه شمسی ما دقیقاً ۸ سیاره دارد."
         },
         {
-            text: "کدام سیاره به زمین نزدیک‌تر است و در آسمان با چشم غیرمسلح دیده می‌شود؟",
+            text: "کدام سیاره به زمین نزدیک‌تر است؟",
             options: ["مشتری", "نپتون", "زهره", "زحل"],
             correct: 2,
             category: "سیارات",
-            fact: "زهره به خواهر زمین معروف است چون اندازه‌اش شبیه زمین است.",
-            explain: "سیاره زهره (ناهید) نزدیک‌ترین سیاره به زمین است و به عنوان ستاره صبح یا عصر دیده می‌شود."
+            fact: "زهره به خواهر زمین معروف است.",
+            explain: "سیاره زهره نزدیک‌ترین سیاره به زمین است."
         },
         {
-            text: "کدام جرم آسمانی از خود نوری ندارد و به دور خورشید می‌چرخد؟",
+            text: "کدام جرم آسمانی از خود نوری ندارد؟",
             options: ["ستاره", "سیاره", "خورشید", "شهاب‌سنگ"],
             correct: 1,
             category: "جرم آسمانی",
-            fact: "سیارات مثل آینه، نور خورشید را بازتاب می‌دهند.",
-            explain: "سیارات نور خودشان را ندارند. آن‌ها نور خورشید را منعکس می‌کنند که باعث می‌شود ما بتوانیمشان ببینیم."
+            fact: "سیارات نور خورشید را بازتاب می‌دهند.",
+            explain: "سیارات نور خودشان را ندارند."
         },
         {
             text: "نزدیک‌ترین ستاره به زمین کدام است؟",
             options: ["ماه", "خورشید", "ستاره قطبی", "تیر"],
             correct: 1,
             category: "ستارگان",
-            fact: "خورشید یک ستاره متوسط است، اما میلیاردها ستاره دیگر در کهکشان راه شیری وجود دارد!",
-            explain: "خورشید نزدیک‌ترین ستاره به زمین است. فاصله زمین تا خورشید حدود ۱۵۰ میلیون کیلومتر است."
+            fact: "خورشید یک ستاره متوسط است.",
+            explain: "خورشید نزدیک‌ترین ستاره به زمین است."
         },
         {
-            text: "دورترین سیاره منظومه شمسی چه نام دارد؟",
+            text: "دورترین سیاره منظومه شمسی کدام است؟",
             options: ["اورانوس", "زحل", "نپتون", "مشتری"],
             correct: 2,
             category: "سیارات",
             fact: "نپتون ۱۶۵ سال زمینی طول می‌کشد تا یک بار به دور خورشید بچرخد!",
-            explain: "نپتون هشتمین و دورترین سیاره منظومه شمسی از خورشید است."
+            explain: "نپتون هشتمین و دورترین سیاره است."
         },
         {
             text: "اولین رصدخانه ایران کجا ساخته شد؟",
             options: ["اصفهان", "مشهد", "شیراز", "ری"],
             correct: 3,
             category: "تاریخ علم",
-            fact: "ری در گذشته یکی از مهم‌ترین مراکز علمی ایران و جهان اسلام بود.",
-            explain: "اولین رصدخانه ایران در شهر ری (نزدیک تهران امروزی) ساخته شد."
+            fact: "ری یکی از مهم‌ترین مراکز علمی ایران بود.",
+            explain: "اولین رصدخانه ایران در شهر ری ساخته شد."
         },
         {
             text: "بزرگ‌ترین سیاره منظومه شمسی کدام است؟",
             options: ["زحل", "مشتری", "نپتون", "اورانوس"],
             correct: 1,
             category: "سیارات",
-            fact: "مشتری آنقدر بزرگ است که بیش از ۱۳۰۰ زمین در آن جا می‌شود!",
-            explain: "مشتری بزرگ‌ترین سیاره منظومه شمسی است و حتی بزرگ‌تر از تمام سیارات دیگر با هم است."
+            fact: "مشتری بیش از ۱۳۰۰ زمین در خود جای می‌دهد!",
+            explain: "مشتری بزرگ‌ترین سیاره منظومه شمسی است."
         },
         {
             text: "زمین در هر چند روز یک بار به دور خورشید می‌چرخد؟",
             options: ["۳۰ روز", "۹۰ روز", "۳۶۵ روز", "۱۸۰ روز"],
             correct: 2,
             category: "زمین",
-            fact: "همین چرخش ۳۶۵ روزه باعث ایجاد فصل‌های مختلف در زمین می‌شود!",
-            explain: "زمین حدود ۳۶۵ روز و ۶ ساعت طول می‌کشد تا یک بار کامل به دور خورشید بچرخد."
+            fact: "همین چرخش ۳۶۵ روزه باعث ایجاد فصل‌ها می‌شود!",
+            explain: "زمین حدود ۳۶۵ روز طول می‌کشد تا به دور خورشید بچرخد."
         },
         {
             text: "چهارمین سیاره منظومه شمسی کدام است؟",
             options: ["زهره", "زمین", "مریخ", "مشتری"],
             correct: 2,
             category: "سیارات",
-            fact: "مریخ به دلیل رنگ قرمزش به سیاره سرخ معروف است. یک روز مریخ تقریباً مثل زمین است!",
-            explain: "ترتیب سیارات: عطارد، ناهید، زمین، مریخ. پس مریخ چهارمین سیاره است."
+            fact: "مریخ به سیاره سرخ معروف است.",
+            explain: "مریخ چهارمین سیاره منظومه شمسی است."
         },
         {
             text: "ماه نور خود را از کجا می‌گیرد؟",
             options: ["خورشید", "ستاره‌ها", "زمین", "خودش"],
             correct: 0,
             category: "ماه",
-            fact: "ماه حتی یک ذره نور هم از خودش ندارد، تمام نور ماه از خورشید است!",
-            explain: "ماه نور خورشید را بازتاب می‌دهد. بخش روشن ماه جایی است که خورشید به آن می‌تابد."
+            fact: "ماه هیچ نوری از خودش ندارد!",
+            explain: "ماه نور خورشید را بازتاب می‌دهد."
         }
     ];
 
-    const correctMessages = [
-        "آفرین! درسته!", "عالی بود!", "خیلی خوبه!", "درسته! ادامه بده!",
-        "دقیقاً! مهارت داری!", "ممتاز!", "برووو!", "فوق‌العاده‌ای!"
-    ];
-    const wrongMessages = [
-        "اینگه نبود! جواب درست رو ببین.",
-        "اشکالی نداره! حالا جواب درست رو یاد می‌گیری.",
-        "نه! اما نگران نباش، از اشتباه یاد می‌گیریم."
-    ];
-
+    const correctMessages = ["آفرین! درسته!", "عالی بود!", "خیلی خوبه!", "دقیقاً! مهارت داری!", "ممتاز!", "برووو!", "فوق‌العاده‌ای!"];
+    const wrongMessages = ["اینگه نبود! جواب درست رو ببین.", "اشکالی نداره! حالا یاد می‌گیری.", "نه! اما نگران نباش."];
     const letters = ['الف', 'ب', 'ج', 'د'];
 
     let state = {
@@ -758,125 +743,40 @@
     }
 
     // ============================================================
-    //   توابع ذخیره‌سازی در Supabase
-    // ============================================================
-    async function saveResultToSupabase(result) {
-        try {
-            const { data, error } = await supabase
-                .from('quiz_results')  // اسم جدول
-                .insert([
-                    {
-                        name: result.name,
-                        score: result.score,
-                        correct: result.correct,
-                        wrong: result.wrong,
-                        time: result.time,
-                        max_streak: result.maxStreak,
-                        created_at: new Date(result.timestamp).toISOString()
-                    }
-                ]);
-
-            if (error) {
-                console.error('❌ خطا در ذخیره در Supabase:', error);
-                // اگر خطا داشت، در localStorage ذخیره کن
-                saveToLocalStorage(result);
-                return false;
-            }
-            console.log('✅ نتیجه با موفقیت در Supabase ذخیره شد');
-            return true;
-        } catch (e) {
-            console.error('❌ خطا:', e);
-            // در صورت خطا، در localStorage ذخیره کن
-            saveToLocalStorage(result);
-            return false;
-        }
-    }
-
-    // ===== ذخیره در localStorage (به عنوان پشتیبان) =====
-    function saveToLocalStorage(result) {
-        const data = getAllLocalData();
-        data.push(result);
-        localStorage.setItem('solarQuizData', JSON.stringify(data));
-        console.log('💾 نتیجه در localStorage ذخیره شد (پشتیبان)');
-    }
-
-    function getAllLocalData() {
-        try { return JSON.parse(localStorage.getItem('solarQuizData') || '[]'); }
-        catch(e) { return []; }
-    }
-
-    function getStudentLocalResults(name) {
-        return getAllLocalData().filter(r => r.name === name);
-    }
-
-    // ===== دریافت نتایج از Supabase =====
-    async function getResultsFromSupabase(name = null) {
-        try {
-            let query = supabase.from('quiz_results').select('*');
-            if (name) {
-                query = query.eq('name', name);
-            }
-            const { data, error } = await query.order('created_at', { ascending: false });
-
-            if (error) {
-                console.error('❌ خطا در دریافت از Supabase:', error);
-                return null;
-            }
-            return data;
-        } catch (e) {
-            console.error('❌ خطا:', e);
-            return null;
-        }
-    }
-
-    // ===== دریافت ترکیبی (اول از Supabase، سپس localStorage) =====
-    async function getAllResults(name = null) {
-        // اول از Supabase بگیر
-        const supabaseData = await getResultsFromSupabase(name);
-        
-        // بعد از localStorage بگیر
-        const localData = name ? getStudentLocalResults(name) : getAllLocalData();
-        
-        // ترکیب و حذف موارد تکراری (بر اساس timestamp)
-        const all = [...(supabaseData || []), ...localData];
-        const seen = new Set();
-        return all.filter(item => {
-            const key = item.name + item.score + item.created_at;
-            if (seen.has(key)) return false;
-            seen.add(key);
-            return true;
-        });
-    }
-
-    // ============================================================
     //   صفحه نخست
     // ============================================================
     const nameInput = document.getElementById('studentNameInput');
     const startBtn = document.getElementById('startBtn');
 
-    async function checkPreviousResults() {
+    function checkPreviousResults() {
         const name = nameInput.value.trim();
         const reportBtn = document.getElementById('viewReportBtn');
         if (name.length >= 2) {
-            const results = await getAllResults(name);
+            const results = getStudentResults(name);
             reportBtn.style.display = results.length > 0 ? 'inline-flex' : 'none';
         } else {
             reportBtn.style.display = 'none';
         }
     }
 
-    nameInput.addEventListener('input', () => {
-        startBtn.disabled = nameInput.value.trim().length < 2;
+    nameInput.addEventListener('input', function() {
+        const name = this.value.trim();
+        startBtn.disabled = name.length < 2;
         checkPreviousResults();
     });
 
-    nameInput.addEventListener('keydown', e => {
-        if (e.key === 'Enter' && !startBtn.disabled) startQuiz();
+    nameInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !startBtn.disabled) {
+            startQuiz();
+        }
     });
 
-    startBtn.addEventListener('click', startQuiz);
+    startBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        startQuiz();
+    });
 
-    document.getElementById('viewReportBtn').addEventListener('click', () => {
+    document.getElementById('viewReportBtn').addEventListener('click', function() {
         if (nameInput.value.trim().length >= 2) {
             state.studentName = nameInput.value.trim();
             showReportCard();
@@ -910,7 +810,6 @@
         showQuestion();
     }
 
-    // ===== مسیر موشک =====
     function buildRocketTrack() {
         const track = document.getElementById('rocketTrack');
         track.innerHTML = '';
@@ -925,8 +824,10 @@
         rocket.id = 'rocketIcon';
         rocket.innerHTML = '<i class="fa-solid fa-rocket" style="transform:scaleX(-1);"></i>';
         const firstDot = document.getElementById('dot-0');
-        firstDot.style.position = 'relative';
-        firstDot.appendChild(rocket);
+        if (firstDot) {
+            firstDot.style.position = 'relative';
+            firstDot.appendChild(rocket);
+        }
     }
 
     function updateRocketTrack(qIndex, isCorrect) {
@@ -944,8 +845,12 @@
         }
     }
 
-    // ===== نمایش سوال =====
     function showQuestion() {
+        if (state.currentQuestion >= 10) {
+            finishQuiz();
+            return;
+        }
+        
         state.answered = false;
         const q = state.questions[state.currentQuestion];
         const idx = state.currentQuestion;
@@ -962,7 +867,7 @@
             const btn = document.createElement('button');
             btn.className = 'option-btn';
             btn.innerHTML = `<span class="option-letter">${letters[i]}</span><span>${opt}</span>`;
-            btn.addEventListener('click', () => selectAnswer(i));
+            btn.addEventListener('click', function() { selectAnswer(i); });
             btn.style.animation = `slideIn 0.4s ease ${i * 0.08}s both`;
             container.appendChild(btn);
         });
@@ -974,11 +879,12 @@
 
         if (idx > 0) {
             const lastAnswer = state.answers[idx - 1];
-            updateRocketTrack(idx, lastAnswer.correct);
+            if (lastAnswer) {
+                updateRocketTrack(idx, lastAnswer.correct);
+            }
         }
     }
 
-    // ===== انتخاب پاسخ =====
     function selectAnswer(index) {
         if (state.answered) return;
         state.answered = true;
@@ -1042,7 +948,7 @@
         nextText.textContent = state.currentQuestion < 9 ? 'سوال بعدی' : 'دیدن نتیجه';
     }
 
-    document.getElementById('nextBtn').addEventListener('click', () => {
+    document.getElementById('nextBtn').addEventListener('click', function() {
         state.currentQuestion++;
         if (state.currentQuestion < 10) {
             showQuestion();
@@ -1051,7 +957,7 @@
         }
     });
 
-    // ===== پایان آزمون =====
+    // ===== پایان آزمون با ذخیره در Supabase =====
     async function finishQuiz() {
         const elapsed = Math.round((Date.now() - state.startTime) / 1000);
         const minutes = Math.floor(elapsed / 60);
@@ -1071,15 +977,60 @@
 
         // ذخیره در Supabase
         showToast('در حال ذخیره نتیجه...', 'info', 2000);
-        const saved = await saveResultToSupabase(result);
-        
-        if (saved) {
-            showToast('نتیجه با موفقیت ذخیره شد!', 'success', 2000);
-        } else {
-            showToast('نتیجه به صورت محلی ذخیره شد.', 'info', 3000);
-        }
+        await saveResultToSupabase(result);
 
         showResults(timeStr);
+    }
+
+    // ============================================================
+    //   توابع Supabase
+    // ============================================================
+    async function saveResultToSupabase(result) {
+        try {
+            const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            const { data, error } = await supabase
+                .from('quiz_results')
+                .insert([
+                    {
+                        name: result.name,
+                        score: result.score,
+                        correct: result.correct,
+                        wrong: result.wrong,
+                        time: result.time,
+                        max_streak: result.maxStreak,
+                        created_at: new Date(result.timestamp).toISOString()
+                    }
+                ]);
+
+            if (error) {
+                console.error('❌ Supabase Error:', error);
+                saveToLocalStorage(result);
+                return false;
+            }
+            console.log('✅ Saved to Supabase');
+            showToast('نتیجه با موفقیت ذخیره شد!', 'success', 2000);
+            return true;
+        } catch (e) {
+            console.error('❌ Error:', e);
+            saveToLocalStorage(result);
+            return false;
+        }
+    }
+
+    function saveToLocalStorage(result) {
+        const data = getAllData();
+        data.push(result);
+        localStorage.setItem('solarQuizData', JSON.stringify(data));
+        showToast('نتیجه به صورت محلی ذخیره شد.', 'info', 2000);
+    }
+
+    function getAllData() {
+        try { return JSON.parse(localStorage.getItem('solarQuizData') || '[]'); }
+        catch(e) { return []; }
+    }
+
+    function getStudentResults(name) {
+        return getAllData().filter(r => r.name === name);
     }
 
     // ============================================================
@@ -1114,7 +1065,7 @@
             html = `
                 <div class="mb-4"><i class="fa-solid fa-medal text-6xl" style="color:var(--gold);animation:float 2s ease infinite;"></i></div>
                 <h2 class="font-display text-2xl mb-2" style="color:var(--gold);">آفرین! عالی بودی!</h2>
-                <p class="text-sm mb-4" style="color:var(--muted);line-height:1.8;">عملکردت واقعاً فوق‌العاده بود! فقط یه ذره بیشتر دقت کن تا بتونی جام قهرمانی رو هم ببری.</p>
+                <p class="text-sm mb-4" style="color:var(--muted);line-height:1.8;">فقط یه ذره بیشتر دقت کن تا جام قهرمانی رو ببری!</p>
                 <div class="flex justify-center gap-4 mb-4">
                     <div class="text-center"><div class="text-2xl font-bold" style="color:var(--gold);">${toPersianNum(score)}</div><div class="text-xs" style="color:var(--muted);">امتیاز</div></div>
                     <div class="text-center"><div class="text-2xl font-bold" style="color:var(--teal);">${timeStr}</div><div class="text-xs" style="color:var(--muted);">زمان</div></div>
@@ -1126,7 +1077,7 @@
             html = `
                 <div class="mb-4"><i class="fa-solid fa-thumbs-up text-6xl" style="color:var(--teal);animation:float 2s ease infinite;"></i></div>
                 <h2 class="font-display text-2xl mb-2" style="color:var(--teal);">خوب بود!</h2>
-                <p class="text-sm mb-4" style="color:var(--muted);line-height:1.8;">کار خوبی کردی! اگه یه کم بیشتر تمرکز کنی، مطمئنم امتیاز خیلی بهتری می‌گیری. ادامه بده!</p>
+                <p class="text-sm mb-4" style="color:var(--muted);line-height:1.8;">با تمرکز بیشتر می‌تونی بهتر بشی!</p>
                 <div class="flex justify-center gap-4 mb-4">
                     <div class="text-center"><div class="text-2xl font-bold" style="color:var(--gold);">${toPersianNum(score)}</div><div class="text-xs" style="color:var(--muted);">امتیاز</div></div>
                     <div class="text-center"><div class="text-2xl font-bold" style="color:var(--teal);">${timeStr}</div><div class="text-xs" style="color:var(--muted);">زمان</div></div>
@@ -1137,7 +1088,7 @@
             html = `
                 <div class="mb-4"><i class="fa-solid fa-seedling text-6xl" style="color:#10B981;animation:float 2s ease infinite;"></i></div>
                 <h2 class="font-display text-2xl mb-2" style="color:#10B981;">تلاشت عالی بود!</h2>
-                <p class="text-sm mb-4" style="color:var(--muted);line-height:1.8;">شکست بخشی از یادگیریه! تو با تلاش بیشتر و مرور مطالب، نتایج خیلی بهتری کسب می‌کنی. دوباره امتحان کن!</p>
+                <p class="text-sm mb-4" style="color:var(--muted);line-height:1.8;">دوباره امتحان کن، موفقیت نزدیکه!</p>
                 <div class="flex justify-center gap-4 mb-4">
                     <div class="text-center"><div class="text-2xl font-bold" style="color:var(--gold);">${toPersianNum(score)}</div><div class="text-xs" style="color:var(--muted);">امتیاز</div></div>
                     <div class="text-center"><div class="text-2xl font-bold" style="color:var(--teal);">${timeStr}</div><div class="text-xs" style="color:var(--muted);">زمان</div></div>
@@ -1197,12 +1148,12 @@
     // ============================================================
     //   کارنامه
     // ============================================================
-    async function showReportCard() {
+    function showReportCard() {
         if (!state.studentName) {
             state.studentName = document.getElementById('studentNameInput').value.trim() || 'کاربر';
         }
         
-        const results = await getAllResults(state.studentName);
+        const results = getStudentResults(state.studentName);
         const container = document.getElementById('reportContent');
 
         if (!container) return;
@@ -1239,7 +1190,7 @@
                 const isBest = r.score === bestScore;
                 html += `<tr class="${isBest ? 'best-row' : ''}">
                     <td>${toPersianNum(i + 1)}</td>
-                    <td style="font-size:0.8rem;">${formatDate(r.timestamp || Date.now())}</td>
+                    <td style="font-size:0.8rem;">${formatDate(r.timestamp)}</td>
                     <td><strong>${toPersianNum(r.score)}</strong>${isBest ? ' <i class="fa-solid fa-crown" style="color:var(--gold);font-size:0.7rem;"></i>' : ''}</td>
                     <td style="color:var(--correct);">${toPersianNum(r.correct)}</td>
                     <td style="color:var(--wrong);">${toPersianNum(r.wrong)}</td>
@@ -1278,7 +1229,7 @@
             state.studentName = document.getElementById('studentNameInput').value.trim() || 'کاربر';
         }
         
-        const results = await getAllResults(state.studentName);
+        const results = getStudentResults(state.studentName);
         
         if (results.length === 0) {
             showToast('هیچ نتیجه‌ای برای دانلود وجود ندارد!', 'error', 3000);
@@ -1295,7 +1246,7 @@
             const isBest = r.score === bestScore;
             tableRows += `<tr class="${isBest ? 'best-row' : ''}">
                 <td>${i + 1}</td>
-                <td>${formatDate(r.timestamp || Date.now())}</td>
+                <td>${formatDate(r.timestamp)}</td>
                 <td>${r.score} از ۱۰۰</td>
                 <td>${r.correct}</td>
                 <td>${r.wrong}</td>
@@ -1361,7 +1312,7 @@
     //   پنل معلم
     // ============================================================
     const TEACHER_PIN = '1234';
-    document.getElementById('teacherPanelBtn').addEventListener('click', () => {
+    document.getElementById('teacherPanelBtn').addEventListener('click', function() {
         document.getElementById('teacherLogin').style.display = 'block';
         document.getElementById('teacherContent').style.display = 'none';
         document.getElementById('teacherPin').value = '';
@@ -1369,40 +1320,36 @@
         showScreen('teacherScreen');
     });
 
-    document.getElementById('teacherPin').addEventListener('keydown', e => {
+    document.getElementById('teacherPin').addEventListener('keydown', function(e) {
         if (e.key === 'Enter') teacherLogin();
     });
 
-    async function teacherLogin() {
+    function teacherLogin() {
         const pin = document.getElementById('teacherPin').value;
         if (pin === TEACHER_PIN) {
             document.getElementById('teacherLogin').style.display = 'none';
             document.getElementById('teacherContent').style.display = 'block';
-            await renderTeacherTable();
+            renderTeacherTable();
         } else {
             document.getElementById('teacherError').style.display = 'block';
             document.getElementById('teacherPin').value = '';
         }
     }
 
-    async function renderTeacherTable() {
+    function renderTeacherTable() {
         const searchInput = document.getElementById('teacherSearch');
         const search = (searchInput?.value || '').trim();
-        let data = await getAllResults();
-        
-        if (search) {
-            data = data.filter(r => r.name && r.name.includes(search));
-        }
-        
+        const data = getAllData();
+        const filtered = search ? data.filter(r => r.name && r.name.includes(search)) : data;
         const container = document.getElementById('teacherTableContainer');
 
-        if (!data || data.length === 0) {
+        if (filtered.length === 0) {
             container.innerHTML = `<div class="text-center py-8"><i class="fa-solid fa-inbox text-3xl mb-3" style="color:var(--muted);"></i><p style="color:var(--muted);">داده‌ای یافت نشد</p></div>`;
             return;
         }
 
         const grouped = {};
-        data.forEach(r => {
+        filtered.forEach(r => {
             if (!grouped[r.name]) grouped[r.name] = [];
             grouped[r.name].push(r);
         });
@@ -1419,13 +1366,13 @@
                 <td class="font-bold">${name}</td>
                 <td>${toPersianNum(attempts.length)}</td>
                 <td style="color:var(--gold);font-weight:700;">${toPersianNum(best)}</td>
-                <td style="font-size:0.78rem;">${formatDate(last.timestamp || Date.now())}</td>
+                <td style="font-size:0.78rem;">${formatDate(last.timestamp)}</td>
                 <td>${toPersianNum(avg)}</td>
             </tr>`;
         });
 
         html += '</tbody></table>';
-        html += `<div class="text-xs mt-3 text-center" style="color:var(--muted);">مجموع ${toPersianNum(data.length)} تلاش از ${toPersianNum(Object.keys(grouped).length)} دانش‌آموز</div>`;
+        html += `<div class="text-xs mt-3 text-center" style="color:var(--muted);">مجموع ${toPersianNum(filtered.length)} تلاش از ${toPersianNum(Object.keys(grouped).length)} دانش‌آموز</div>`;
         container.innerHTML = html;
     }
 
@@ -1449,30 +1396,17 @@
         document.body.appendChild(modal);
     }
 
-    async function confirmClear() {
-        // پاک کردن از Supabase
-        try {
-            const { error } = await supabase.from('quiz_results').delete().neq('id', 0);
-            if (error) {
-                console.error('خطا در پاک کردن Supabase:', error);
-            }
-        } catch(e) {
-            console.error('خطا:', e);
-        }
-        
-        // پاک کردن localStorage
+    function confirmClear() {
         localStorage.removeItem('solarQuizData');
         document.getElementById('confirmModal').remove();
-        await renderTeacherTable();
+        renderTeacherTable();
         showToast('تمام داده‌ها پاک شد.', 'info');
     }
 
-    // ===== رویداد چاپ =====
-    window.addEventListener('beforeprint', () => {
-        // استایل چاپ
-    });
+    window.addEventListener('beforeprint', function() {});
 
     console.log('✅ برنامه با موفقیت بارگذاری شد!');
+    console.log('🔑 کد پنل معلم: 1234');
     </script>
 </body>
 </html>
