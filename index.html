@@ -25,6 +25,7 @@
     </script>
     
     <style>
+        /* ===== استایل‌های کامل ===== */
         :root {
             --bg: #0B1026;
             --bg-light: #111638;
@@ -403,7 +404,7 @@
 
     <script>
     // ============================================================
-    //   تنظیمات Supabase
+    //   تنظیمات Supabase - این دو خط را با اطلاعات خودت پر کن
     // ============================================================
     const SUPABASE_URL = 'https://umyxarhminlnkmlnyuyl.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_pl4pUJrlRdkoAGjQPLobwg_RPTNLdCT';
@@ -956,9 +957,7 @@
         }
     });
 
-    // ============================================================
-    //   پایان آزمون با ذخیره در Supabase
-    // ============================================================
+    // ===== پایان آزمون با ذخیره در Supabase =====
     async function finishQuiz() {
         const elapsed = Math.round((Date.now() - state.startTime) / 1000);
         const minutes = Math.floor(elapsed / 60);
@@ -976,6 +975,7 @@
             maxStreak: state.maxStreak
         };
 
+        // ذخیره در Supabase
         showToast('در حال ذخیره نتیجه...', 'info', 2000);
         await saveResultToSupabase(result);
 
@@ -1017,13 +1017,11 @@
         }
     }
 
-    // ============================================================
-    //   توابع ذخیره‌سازی محلی (LocalStorage) - به عنوان پشتیبان
-    // ============================================================
     function saveToLocalStorage(result) {
         const data = getAllData();
         data.push(result);
         localStorage.setItem('solarQuizData', JSON.stringify(data));
+        showToast('نتیجه به صورت محلی ذخیره شد.', 'info', 2000);
     }
 
     function getAllData() {
